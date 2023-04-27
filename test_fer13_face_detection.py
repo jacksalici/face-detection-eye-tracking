@@ -5,7 +5,7 @@ from pathlib import Path
 """
     Script to test how good the haarCascade OpenCv detector works using the Fer2013 dataset.
     With my current settings, the results are following. 
-    {'0': 18016, '1': 17867, '2': 4}
+    {'0': 15272, '1': 20608, '2': 7}
     Please note that the value of each key represents the number of images in which that key number of faces have been detected.
 """
 
@@ -17,4 +17,4 @@ for image in list(Path(FER2013_PATH).rglob("*.jpg")):
     faces = haarCascade.face_detection(cv2.imread(str(image)))
     face_detected[str(len(faces))]+=1
 
-print(f"\nTOTALS:\n{face_detected}")
+print(f"\n# FACES DETECTED PER IMAGE:\n{face_detected}")
