@@ -2,4 +2,4 @@
 
 > "Robot: ≪Are you looking me?≫"
 
-Done as part of the Computer Vision course final project aimed to detect any person looking straight into the camera.  
+This repo is part of the Computer Vision course final project, the goal is to detect any person looking straight into the camera.  
