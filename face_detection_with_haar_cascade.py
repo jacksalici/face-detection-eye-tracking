@@ -8,13 +8,22 @@ class HaarCascade():
         self.face_cascade = cv2.CascadeClassifier(os.path.join('predictors','haarcascade_frontalface_alt.xml'))
         self.eye_cascade = cv2.CascadeClassifier(os.path.join('predictors','haarcascade_eye.xml'))
 
-    def face_detection(self,frame):
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = self.face_cascade.detectMultiScale(gray, 1.2, 2)
-
+    def face_detection(self, frame, scale_factor=1.2, min_neighbors=2):            
+        return self.face_cascade.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), scale_factor, min_neighbors)
+    
+    
+    def face_framing(self, faces, frame):
+        for (x, y, w, h) in faces:            
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        
+        return frame
+        
+        
+    
+    def eye_framing(self, faces, frame):
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-            roi_gray = gray[y:y+h, x:x+w]
+            roi_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)[y:y+h, x:x+w]
             roi_color = frame[y:y+h, x:x+w]
             eyeglasses = self.eye_cascade.detectMultiScale(roi_gray)
 
@@ -43,7 +52,7 @@ while(True):
     # Capture the video frame by frame
     ret, frame = vid.read()
     
-    cv2.imshow('frame', cascade.face_detection(frame))
+    cv2.imshow('frame', cascade.eye_framing(cascade.face_detection(frame), frame))
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
