@@ -3,6 +3,11 @@ import dlib
 from imutils import face_utils
 import cv2
 
+class Eye():
+
+
+
+
 class GazeTracking():
     def __init__(self) -> None:
         self.landmark_predictor = dlib.shape_predictor('predictors/shape_predictor_68_face_landmarks.dat')
@@ -10,6 +15,7 @@ class GazeTracking():
     
     def face_analysis(self, frame):
         faces = self.face_detector(frame,  1)
+        landmark_dict_list = []
         for face in faces:
             
             shape = face_utils.shape_to_np(self.landmark_predictor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), face))
@@ -17,6 +23,7 @@ class GazeTracking():
             
             
             landmark_dict = {
+                "face_box": (x, y, w, h),
                 "ear_dx": shape[0],
                 "ear_sx": shape[16],
                 "nose": shape[30],
@@ -24,13 +31,14 @@ class GazeTracking():
                 "mouth_sx": shape[54],
                 "center_eye_dx": np.round(np.mean(shape[36:42], axis=0)).astype(int),
                 "center_eye_sx": np.round(np.mean(shape[42:48], axis=0)).astype(int),
+                "corner_out_eye_dx": shape[36],
+                "corner_in_eye_dx": shape [39],
+                "corner_out_eye_sx": shape[45],
+                "corner_in_eye_sx": shape[42],   
             }
                         
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            landmark_dict_list.append(landmark_dict)
             
-            for mark in landmark_dict.values():
-                cv2.circle(frame, (mark[0], mark[1]), 2, (0, 255, 255), -1)
+        return landmark_dict_list
             
-        return frame
-            
-    
+        

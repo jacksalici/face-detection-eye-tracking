@@ -14,7 +14,11 @@ while(True):
     
     #cv2.imshow('frame', cascade.eye_framing(cascade.face_detection(frame), frame))
    
-    cv2.imshow('frame',  gazeTracking.face_analysis(frame))
+    for landmark_dict in gazeTracking.face_analysis(frame):
+        for mark in landmark_dict.values():
+                cv2.circle(frame, (mark[0], mark[1]), 2, (0, 255, 255), -1)
+            
+    cv2.imshow('frame',  frame)
     
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
