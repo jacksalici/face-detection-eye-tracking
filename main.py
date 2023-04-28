@@ -13,9 +13,9 @@ while(True):
     ret, frame = vid.read()
     
     #cv2.imshow('frame', cascade.eye_framing(cascade.face_detection(frame), frame))
-    cv2.imshow('frame', frame)
-    gazeTracking.face_analysis(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-    break
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    cv2.imshow('frame',  gazeTracking.face_analysis(gray))
+    
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
