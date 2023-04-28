@@ -11,19 +11,25 @@ class GazeTracking():
     def face_analysis(self, frame):
         faces = self.face_detector(frame,  1)
         for face in faces:
-            shape = self.landmark_predictor(frame, face)
-
-  
-            shape = face_utils.shape_to_np(shape)
-            # convert dlib's rectangle to a OpenCV-style bounding box
-            # [i.e., (x, y, w, h)], then draw the face bounding box
+            
+            shape = face_utils.shape_to_np(self.landmark_predictor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), face))
             (x, y, w, h) = face_utils.rect_to_bb(face)
+            
+            
+            landmark_dict = {
+                "ear_dx": shape[0],
+                "ear_sx": shape[16],
+                "nose": shape[30],
+                "mouth_dx": shape[48],
+                "mouth_sx": shape[54],
+                "center_eye_dx": np.round(np.mean(shape[36:42], axis=0)).astype(int),
+                "center_eye_sx": np.round(np.mean(shape[42:48], axis=0)).astype(int),
+            }
+                        
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            # show the face number
-            # loop over the (x, y)-coordinates for the facial landmarks
-            # and draw them on the image
-            for (x, y) in shape:
-                cv2.circle(frame, (x, y), 1, (0, 0, 255), -1)
+            
+            for mark in landmark_dict.values():
+                cv2.circle(frame, (mark[0], mark[1]), 2, (0, 255, 255), -1)
             
         return frame
             
