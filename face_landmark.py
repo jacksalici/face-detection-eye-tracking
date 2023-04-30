@@ -14,8 +14,7 @@ class FaceLandmarkTracking():
         poi_list = []
         for face in faces:
 
-            shape = face_utils.shape_to_np(self.landmark_predictor(
-                cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), face))
+            shape = face_utils.shape_to_np(self.landmark_predictor(frame, face))
             (x, y, w, h) = face_utils.rect_to_bb(face)
 
             poi_list.append({
