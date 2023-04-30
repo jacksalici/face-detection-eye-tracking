@@ -24,9 +24,9 @@ class HaarCascade():
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
             roi_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)[y:y+h, x:x+w]
             roi_color = frame[y:y+h, x:x+w]
-            eyeglasses = self.eye_cascade.detectMultiScale(roi_gray)
+            eyes = self.eye_cascade.detectMultiScale(roi_gray)
 
-            for (ex, ey, ew, eh) in eyeglasses:
+            for (ex, ey, ew, eh) in eyes:
                 cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0, 0, 255), 2)
                 
         return frame

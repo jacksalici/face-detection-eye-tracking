@@ -11,11 +11,9 @@ gazeTracking = GazeTracking()
 while(True):
     # Capture the video frame by frame
     ret, frame = vid.read()
-    
-    #cv2.imshow('frame', cascade.eye_framing(cascade.face_detection(frame), frame))
-   
-    for landmark_dict in gazeTracking.face_analysis(frame):
-        for mark in landmark_dict.values():
+       
+    for face in gazeTracking.face_analysis(frame):
+        for mark in face["eye_corners"].values():
                 cv2.circle(frame, (mark[0], mark[1]), 2, (0, 255, 255), -1)
             
     cv2.imshow('frame',  frame)
