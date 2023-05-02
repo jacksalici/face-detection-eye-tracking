@@ -26,7 +26,8 @@ As the third step, we have read in detail the method proposed by [Timm and Barth
 
 
 
-$$  c^*=\underset{c}{\arg\min}\left \{ \frac{1}{N} \sum_{i=1}^{N}(d_i^\top g_i)^2\right \}, $$ 
+$$  c^*=\underset{c}{\arg\min} \frac{1}{N} \sum_{i=1}^{N}(d_i^\top g_i)^2 , $$ 
+
 $$ d_i = \frac{x_i-c}{||x_i-c||_2}, \forall{i}: ||g_i||_2=1 $$
 
 This method requires an input of a cropped image of an eye, so we used the information from the second step to get the needed processing. We then developed a script of the above-presented method, partially following an already existing work [Trishume] and its Python implementation [abhisuri97]. In the future, we will review the already working script to achieve maximum performance.
