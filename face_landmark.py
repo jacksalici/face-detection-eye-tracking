@@ -34,6 +34,8 @@ class FaceLandmarkTracking():
                     "dx_in": shape[39],
                     "sx_out": shape[45],
                     "sx_in": shape[42],
+                },
+                "eye_edges":{
                     "sx_top": np.round(np.mean(shape[37:38], axis=0)).astype(int),
                     "sx_bottom": np.round(np.mean(shape[41:42], axis=0)).astype(int),
                     "dx_top": np.round(np.mean(shape[43:45], axis=0)).astype(int),
