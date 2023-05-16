@@ -1,7 +1,7 @@
 
-from face_detection_with_haar_cascade import HaarCascade
-from face_landmark import FaceLandmarkTracking
-from pupil_detection import PupilDetection
+from components.face_detection import HaarCascade
+from components.face_landmark import FaceLandmarkTracking
+from components.pupil_detection import PupilDetection
 import cv2
 
 

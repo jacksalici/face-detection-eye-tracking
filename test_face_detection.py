@@ -1,4 +1,4 @@
-from face_detection_with_haar_cascade import HaarCascade
+from components.face_detection import HaarCascade
 import cv2
 import dlib
 from pathlib import Path
