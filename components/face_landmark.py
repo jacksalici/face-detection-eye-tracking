@@ -25,6 +25,7 @@ class FaceLandmarkTracking():
                     "nose": shape[30],
                     "mouth_dx": shape[48],
                     "mouth_sx": shape[54],
+                    "chin": shape[9],
                     "center_eye_dx": np.round(np.mean(shape[36:42], axis=0)).astype(int),
                     "center_eye_sx": np.round(np.mean(shape[42:48], axis=0)).astype(int),
 
