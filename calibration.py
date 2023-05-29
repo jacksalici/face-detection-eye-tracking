@@ -1,8 +1,13 @@
 import numpy as np
 import cv2
 import glob
+import json
 
 # termination criteria
+
+CHECKERBOARD = (7,7)
+VERBOSE = False
+
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
@@ -20,7 +25,7 @@ for fname in images:
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
     # Find the chess board corners
-    ret, corners = cv2.findChessboardCorners(gray, (7,7),None)
+    ret, corners = cv2.findChessboardCorners(gray, CHECKERBOARD ,None)
     print(ret)
 
     # If found, add object points, image points (after refining them)
@@ -30,10 +35,13 @@ for fname in images:
         imgpoints.append(corners2)
 
         # Draw and display the corners
-        img = cv2.drawChessboardCorners(img, (7,7), corners2,ret)
-        cv2.imwrite(fname[:-4] + '_corners.jpg',img)
+        img = cv2.drawChessboardCorners(img, CHECKERBOARD, corners2,ret)
 
+    if VERBOSE:
+        cv2.imshow('img', img)
+        cv2.waitKey(0)
 
+cv2.destroyAllWindows()
 
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
 
@@ -43,19 +51,23 @@ for i in range(len(objpoints)):
     imgpoints2, _ = cv2.projectPoints(objpoints[i], rvecs[i], tvecs[i], mtx, dist)
     error = cv2.norm(imgpoints[i],imgpoints2, cv2.NORM_L2)/len(imgpoints2)
     mean_error += error
+    
+    
+if VERBOSE:
+    print("total error: ", mean_error/len(objpoints))
 
-print("total error: ", mean_error/len(objpoints))
 
+    img = cv2.imread('calibration/img5.jpg')
+    h,  w = img.shape[:2]
+    newcameramtx, roi=cv2.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
 
-img = cv2.imread('calibration/img5.jpg')
-h,  w = img.shape[:2]
-newcameramtx, roi=cv2.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
+    # undistort
+    mapx,mapy = cv2.initUndistortRectifyMap(mtx,dist,None,newcameramtx,(w,h),5)
+    dst = cv2.remap(img,mapx,mapy,cv2.INTER_LINEAR)
 
-# undistort
-mapx,mapy = cv2.initUndistortRectifyMap(mtx,dist,None,newcameramtx,(w,h),5)
-dst = cv2.remap(img,mapx,mapy,cv2.INTER_LINEAR)
-
-# crop the image
-x,y,w,h = roi
-dst = dst[y:y+h, x:x+w]
-cv2.imwrite('calibresult.png',dst)
+    # crop the image
+    x,y,w,h = roi
+    dst = dst[y:y+h, x:x+w]
+    cv2.imwrite('calibresult.png',dst)
+    
+np.savez("calib_results", mtx=mtx, dist=dist)
