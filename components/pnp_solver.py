@@ -3,17 +3,17 @@ import math
 import cv2
 
 
+# Checks if a matrix is a valid rotation matrix.
+def isRotationMatrix(R) :
+    Rt = np.transpose(R)
+    shouldBeIdentity = np.dot(Rt, R)
+    I = np.identity(3, dtype = R.dtype)
+    n = np.linalg.norm(I - shouldBeIdentity)
+    return n < 1e-6
+ 
 
 def rotationMatrixToEulerAngles(R):
-    """
-    Computes the Tait-Bryan Euler angles from a Rotation Matrix.
-    Also checks if there is a gymbal lock and eventually use an alternative formula
-    :param R: np.array
-        3 x 3 Rotation matrix
-    :return: (roll, pitch, yaw) tuple of float numbers
-        Euler angles in radians
-    """
-    # Calculates Tait–Bryan Euler angles from a Rotation Matrix
+    assert(isRotationMatrix(R))
 
     sy = np.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
     singular = sy < 1e-6
@@ -23,7 +23,7 @@ def rotationMatrixToEulerAngles(R):
         y = np.arctan2(-R[2, 0], sy)
         z = np.arctan2(R[1, 0], R[0, 0])
 
-    else:  # if in gymbal lock, use different formula for yaw, pitch roll
+    else:  # if in gymbal lock
         x = np.arctan2(-R[1, 2], R[1, 1])
         y = np.arctan2(-R[2, 0], sy)
         z = 0
@@ -89,10 +89,10 @@ class PnPSolver:
              # using the Rodrigues formula, this functions computes the Rotation Matrix from the rotation vector
             Rmat = cv2.Rodrigues(rotation_vector)[0]
 
-            roll, pitch, yaw = rotationMatrixToEulerAngles(Rmat) * 180/np.pi
+            pitch, yaw, roll = rotationMatrixToEulerAngles(Rmat) * 180/np.pi
 
 
-            return nose_end_point2D, roll, pitch, yaw
+            return nose_end_point2D, pitch, yaw, roll
 
         else:
             return None, None, None, None

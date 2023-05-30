@@ -12,7 +12,7 @@ vid = cv2.VideoCapture(0)
 landmark_tracking = FaceLandmarkTracking()
 pupil_detection = PupilDetection()
 # np.load('calib_results.npz')
-pnp_solver = PnPSolver(np.load('calib_results.npz'))
+pnp_solver = PnPSolver()
 
 while(True):
     ret, frame = vid.read()
@@ -29,23 +29,35 @@ while(True):
             face.get("traits").get("mouth_dx"),
         ], dtype="double")
 
-        nose_end_point2D, roll, pitch, yaw = pnp_solver.pose(
+
+         
+
+
+
+        nose_end_point2D, pitch, yaw, roll = pnp_solver.pose(
             frame.shape, image_points)
 
-        frame = cv2.line(frame, tuple(image_points[0].ravel().astype(int)), tuple(
-            nose_end_point2D[0].ravel().astype(int)), (255, 0, 0), 3)
-        frame = cv2.line(frame, tuple(image_points[0].ravel().astype(int)), tuple(
-            nose_end_point2D[1].ravel().astype(int)), (0, 255, 0), 3)
-        frame = cv2.line(frame, tuple(image_points[0].ravel().astype(int)), tuple(
-            nose_end_point2D[2].ravel().astype(int)), (0, 0, 255), 3)
+        for p in image_points:
+            cv2.circle(frame, tuple(p.ravel().astype(int)),
+                       2, (255, 255, 0), -1)
 
-        if roll is not None and pitch is not None and yaw is not None:
-            cv2.putText(frame, "Roll:" + str(round(roll, 3)), (500, 50),
-                        cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
-            cv2.putText(frame, "Pitch:" + str(round(pitch, 3)), (500, 70),
-                        cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
-            cv2.putText(frame, "Yaw:" + str(round(yaw, 3)), (500, 90),
-                        cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
+        try:
+            frame = cv2.line(frame, tuple(image_points[0].ravel().astype(int)), tuple(
+                nose_end_point2D[0].ravel().astype(int)), (255, 0, 0), 3)
+            frame = cv2.line(frame, tuple(image_points[0].ravel().astype(int)), tuple(
+                nose_end_point2D[1].ravel().astype(int)), (0, 255, 0), 3)
+            frame = cv2.line(frame, tuple(image_points[0].ravel().astype(int)), tuple(
+                nose_end_point2D[2].ravel().astype(int)), (0, 0, 255), 3)
+
+            if roll and pitch and yaw:
+                cv2.putText(frame, "Roll: " + str(round(roll)), (500, 50),
+                            1, 1, (255, 255, 255), 1, cv2.LINE_AA)
+                cv2.putText(frame, "Pitch: " + str(round(pitch)), (500, 70),
+                            1, 1, (255, 255, 255), 1, cv2.LINE_AA)
+                cv2.putText(frame, "Yaw: " + str(round(yaw)), (500, 90),
+                            1, 1, (255, 255, 255), 1, cv2.LINE_AA)
+        except Exception:
+            print(Exception.with_traceback)
 
     cv2.imshow('frame',  frame)
     # cv2.waitKey(10000)
