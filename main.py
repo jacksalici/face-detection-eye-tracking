@@ -21,24 +21,30 @@ while(True):
 
     for face in landmark_tracking.face_analysis(framebg):
         image_points = np.array([
-            face.get("traits").get("nose"),
-            face.get("traits").get("chin"),
-            face.get("eye_corners").get("sx_out"),
-            face.get("eye_corners").get("dx_out"),
-            face.get("traits").get("mouth_sx"),
-            face.get("traits").get("mouth_dx"),
+            face.get("nose"),
+            face.get("chin"),
+            face.get("eye_sx_out"),
+            face.get("eye_dx_out"),
+            face.get("mouth_sx"),
+            face.get("mouth_dx"),
         ], dtype="double")
-
-
          
 
 
 
         nose_end_point2D, pitch, yaw, roll = pnp_solver.pose(
             frame.shape, image_points)
+        
+        
+        
+        cv2.rectangle(frame, (face.get("eye_sx_out")[0], face.get("eye_sx_top")[1]),  (face.get("eye_sx_in")[0], face.get("eye_sx_bottom")[1]), (255, 0, 255), 1 )
+        cv2.rectangle(frame, (face.get("eye_dx_in")[0], face.get("eye_dx_top")[1]),  (face.get("eye_dx_out")[0], face.get("eye_dx_bottom")[1]), (255, 0, 255), 1 )
 
-        for p in image_points:
-            cv2.circle(frame, tuple(p.ravel().astype(int)),
+
+
+        l = list(face.values())
+        for p in l[1:]:
+            cv2.circle(frame, (int(p[0]), int(p[1])),
                        2, (255, 255, 0), -1)
 
         try:
