@@ -5,7 +5,7 @@ from queue import *
 
 
 class PupilDetection():
-    def __init__(self, accuracy = 50, blur_size = 5) -> None:
+    def __init__(self, accuracy = 30, blur_size = 5) -> None:
         self.ACCURACY = accuracy
         self.BLUR_SIZE = blur_size
     

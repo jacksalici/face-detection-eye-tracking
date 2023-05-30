@@ -41,9 +41,14 @@ while(True):
         cv2.rectangle(frame, (face.get("eye_dx_in")[0], face.get("eye_dx_top")[1]),  (face.get("eye_dx_out")[0], face.get("eye_dx_bottom")[1]), (255, 0, 255), 1 )
 
 
-
-        l = list(face.values())
-        for p in l[1:]:
+        (pupil_sx_x, pupil_sx_y) = pupil_detection.detect_pupil(framebg[face.get("eye_sx_top")[1]-50: face.get("eye_sx_bottom")[1]+50, face.get("eye_sx_in")[0]-50: face.get("eye_sx_out")[0]]+50)
+        pupil_sx_y, pupil_sx_x = face.get("eye_sx_top")[1]-50+pupil_sx_y, face.get("eye_sx_in")[0]-50 + pupil_sx_x
+        
+        
+        cv2.circle(frame, (pupil_sx_x, pupil_sx_y),
+                       10, (0, 255, 255), 1)
+        
+        for p in list(face.values())[1:]:
             cv2.circle(frame, (int(p[0]), int(p[1])),
                        2, (255, 255, 0), -1)
 
@@ -56,11 +61,11 @@ while(True):
                 nose_end_point2D[2].ravel().astype(int)), (0, 0, 255), 3)
 
             if roll and pitch and yaw:
-                cv2.putText(frame, "Roll: " + str(round(roll)), (500, 50),
+                cv2.putText(frame, "Roll: " + str(round(roll)), (face.get("eye_dx_out")[0], 100),
                             1, 1, (255, 255, 255), 1, cv2.LINE_AA)
-                cv2.putText(frame, "Pitch: " + str(round(pitch)), (500, 70),
+                cv2.putText(frame, "Pitch: " + str(round(pitch)), (face.get("eye_dx_out")[0], 120),
                             1, 1, (255, 255, 255), 1, cv2.LINE_AA)
-                cv2.putText(frame, "Yaw: " + str(round(yaw)), (500, 90),
+                cv2.putText(frame, "Yaw: " + str(round(yaw)), (face.get("eye_dx_out")[0], 140),
                             1, 1, (255, 255, 255), 1, cv2.LINE_AA)
         except Exception:
             print(Exception.with_traceback)
