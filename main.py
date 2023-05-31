@@ -1,6 +1,5 @@
-from components.face_detection import HaarCascade
 from components.face_landmark import FaceLandmarkTracking
-from components.pupil_detection import PupilDetection
+from components.pupil_detection_2 import PupilDetection
 from components.pnp_solver import PnPSolver
 
 import cv2
@@ -11,16 +10,17 @@ vid = cv2.VideoCapture(0)
 
 landmark_tracking = FaceLandmarkTracking()
 pupil_detection = PupilDetection()
-# np.load('calib_results.npz')
-pnp_solver = PnPSolver()
+pnp_solver = PnPSolver()  # to use the calibration (np.load('calib_results.npz'))
+
+face_facing = False
+gaze_facing = False
 
 while(True):
-    ret, frame = vid.read()
-    #frame = cv2.imread("face1.png")
+    ret, frame = vid.read()  # frame = cv2.imread("face1.png")
     framebg = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     for face in landmark_tracking.face_analysis(framebg):
-        
+
         image_points = np.array([
             face.get("nose"),
             face.get("chin"),
@@ -32,107 +32,114 @@ while(True):
 
         nose_end_point2D, pitch, yaw, roll = pnp_solver.pose(
             frame.shape, image_points)
-        
 
-        eye_frame_padding = 0
-        cv2.rectangle(frame, (face.get("eye_sx_in")[0]-eye_frame_padding, 
-                              face.get("eye_sx_top")[1]-eye_frame_padding),
-                      (face.get("eye_sx_out")[0]+eye_frame_padding, 
-                       face.get("eye_sx_bottom")[1]+eye_frame_padding),
-                      (255, 0, 255), 1)
-        cv2.rectangle(frame, (face.get("eye_dx_out")[0]-eye_frame_padding, 
-                              face.get("eye_dx_top")[1]-eye_frame_padding),
-                      (face.get("eye_dx_in")[0]+eye_frame_padding, 
-                       face.get("eye_dx_bottom")[1]+eye_frame_padding),
-                      (255, 0, 255), 1)
+        face_facing = False
+        face_facing_sensibility = 20
+
+        if abs(pitch) < face_facing_sensibility and abs(yaw) < face_facing_sensibility:
+            face_facing = True
+
+        eye_frame_padding = 5+2
 
         eyes = [framebg[
-            face.get("eye_sx_top")[1] - eye_frame_padding: 
+            face.get("eye_sx_top")[1] - eye_frame_padding:
                 face.get("eye_sx_bottom")[1] + eye_frame_padding,
-            face.get("eye_sx_in")[0] - eye_frame_padding: 
+            face.get("eye_sx_in")[0] - eye_frame_padding:
                 face.get("eye_sx_out")[0] + eye_frame_padding],
-            framebg[
-            face.get("eye_dx_top")[1]-eye_frame_padding: 
+                framebg[
+            face.get("eye_dx_top")[1]-eye_frame_padding:
                 face.get("eye_dx_bottom")[1]+eye_frame_padding,
-            face.get("eye_dx_out")[0]-eye_frame_padding: 
+            face.get("eye_dx_out")[0]-eye_frame_padding:
                 face.get("eye_dx_in")[0]+eye_frame_padding]
-        ] 
-        
-        
-        pupils = []
+                ]
 
-        for eye in eyes:
-            #cv2.imshow('eye', eye)
-            #cv2.waitKey()
+        pupil_sx_x, pupil_sx_y = pupil_detection.detect_pupil(eyes[0], 0)
+        pupil_dx_x, pupil_dx_y = pupil_detection.detect_pupil(eyes[1], 1)
 
-            # Step 2: Apply Gaussian blur
-            blurred = cv2.GaussianBlur(eye, (5, 5), 0)
+        if pupil_sx_x and pupil_sx_y:
+            pupil_sx_y, pupil_sx_x = face.get("eye_sx_top")[
+                1] - eye_frame_padding + pupil_sx_y, face.get("eye_sx_in")[0] - eye_frame_padding + pupil_sx_x
+            pupil_dx_y, pupil_dx_x = face.get("eye_dx_top")[
+                1] - eye_frame_padding + pupil_dx_y, face.get("eye_dx_out")[0] - eye_frame_padding + pupil_dx_x
+            
+            
+            # horizzontal ratio that expresses how centered the pupil is within the eyes, from -0.5 to 0.5, 0 is center. 
+            pupil_sx_center_h_ratio = round((pupil_sx_x - face.get("eye_sx_in")[0]) / (face.get("eye_sx_out")[0] - face.get("eye_sx_in")[0]) - 0.5 ,2) 
+            pupil_dx_center_h_ratio = round((pupil_dx_x - face.get("eye_dx_out")[0]) / (face.get("eye_dx_in")[0] - face.get("eye_dx_out")[0]) - 0.5 ,2)
 
-            # Step 3: Apply adaptive threshold
-            thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-
-            cv2.imshow('eye', thresh)
-            cv2.waitKey()
-            # Step 4: Find contours
-            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            # Step 5: Find the largest contour
-            largest_contour = max(contours, key=cv2.contourArea)
-
-            # Step 6: Find the centroid
-            M = cv2.moments(largest_contour)
-            centroid_x = int(M["m10"] / M["m00"])
-            centroid_y = int(M["m01"] / M["m00"])
-                        
-            pupils.append((centroid_x, centroid_y))
+            gaze_facing = False
+            gaze_facing_direction = (pupil_dx_center_h_ratio + pupil_sx_center_h_ratio) #double of the mean between the directions [-1, 1]
+            gaze_facing_direction *= 50 #angle of view
+            
+            if face_facing or abs(gaze_facing_direction - yaw)<face_facing_sensibility:
+                gaze_facing = True
             
         
         
-        (pupil_sx_x, pupil_sx_y) = pupils[0]
-        (pupil_dx_x, pupil_dx_y) = pupils[1]
-        """
+        try:
+            cv2.rectangle(frame, (face.get("box")[0], face.get("box")[1]), (face.get("box")[
+                          0]+face.get("box")[2], face.get("box")[1]+face.get("box")[3]), (255, 0, 255), 2)
+
+            cv2.rectangle(frame, (face.get("eye_sx_in")[0]-eye_frame_padding,
+                                  face.get("eye_sx_top")[1]-eye_frame_padding),
+                          (face.get("eye_sx_out")[0]+eye_frame_padding,
+                           face.get("eye_sx_bottom")[1]+eye_frame_padding),
+                          (255, 0, 255), 2)
+            cv2.rectangle(frame, (face.get("eye_dx_out")[0]-eye_frame_padding,
+                                  face.get("eye_dx_top")[1]-eye_frame_padding),
+                          (face.get("eye_dx_in")[0]+eye_frame_padding,
+                           face.get("eye_dx_bottom")[1]+eye_frame_padding),
+                          (255, 0, 255), 2)
+        except:
+            print("Error during info display")
         
-        pupil_sx_x, pupil_sx_y = pupil_detection.detect_pupil(eyes[0])
-        pupil_dx_x, pupil_dx_y = pupil_detection.detect_pupil(eyes[0])
-        """
-        pupil_sx_y, pupil_sx_x = face.get("eye_sx_top")[1] - eye_frame_padding +pupil_sx_y, face.get("eye_sx_in")[0]  - eye_frame_padding + pupil_sx_x
-        pupil_dx_y, pupil_dx_x = face.get("eye_dx_top")[1] - eye_frame_padding +pupil_dx_y, face.get("eye_dx_out")[0]  - eye_frame_padding + pupil_dx_x
+        try:
+            cv2.circle(frame, (pupil_sx_x, pupil_sx_y),
+                       10, (0, 255, 255), 2)
 
-        cv2.circle(frame, (pupil_sx_x, pupil_sx_y),
-                   10, (0, 255, 255), 1)
+            cv2.circle(frame, (pupil_dx_x, pupil_dx_y),
+                       10, (0, 255, 255), 2)
 
-        cv2.circle(frame, (pupil_dx_x, pupil_dx_y),
-                   10, (0, 255, 255), 1)
-
-        for p in list(face.values())[1:]:
-            cv2.circle(frame, (int(p[0]), int(p[1])),
-                       2, (255, 255, 0), -1)
+            for p in list(face.values())[1:]:
+                cv2.circle(frame, (int(p[0]), int(p[1])),
+                           2, (255, 255, 0), -1)
+            
+            cv2.putText(frame, f"Pupil horizzontal ratios: {pupil_dx_center_h_ratio}, {pupil_sx_center_h_ratio} - {gaze_facing_direction}°", (face.get("eye_dx_out")[0], 160),
+                            1, 1, (255, 255, 255), 1, cv2.LINE_AA)
+        except:
+            print("Error during info display")
         
         try:
             frame = cv2.line(frame, tuple(image_points[0].ravel().astype(int)), tuple(
-                nose_end_point2D[0].ravel().astype(int)), (255, 0, 0), 3)
+                nose_end_point2D[0].ravel().astype(int)), (255, 0, 0), 2)
             frame = cv2.line(frame, tuple(image_points[0].ravel().astype(int)), tuple(
-                nose_end_point2D[1].ravel().astype(int)), (0, 255, 0), 3)
+                nose_end_point2D[1].ravel().astype(int)), (0, 255, 0), 2)
             frame = cv2.line(frame, tuple(image_points[0].ravel().astype(int)), tuple(
-                nose_end_point2D[2].ravel().astype(int)), (0, 0, 255), 3)
+                nose_end_point2D[2].ravel().astype(int)), (0, 0, 255), 2)
 
             if roll and pitch and yaw:
-                cv2.putText(frame, "Roll: " + str(round(roll)), (face.get("eye_dx_out")[0], 100),
+                cv2.putText(frame, "Roll: " + str(round(roll)) + "°", (face.get("eye_dx_out")[0], 100),
                             1, 1, (255, 255, 255), 1, cv2.LINE_AA)
-                cv2.putText(frame, "Pitch: " + str(round(pitch)), (face.get("eye_dx_out")[0], 120),
+                cv2.putText(frame, "Pitch: " + str(round(pitch))  + "°", (face.get("eye_dx_out")[0], 120),
                             1, 1, (255, 255, 255), 1, cv2.LINE_AA)
-                cv2.putText(frame, "Yaw: " + str(round(yaw)), (face.get("eye_dx_out")[0], 140),
+                cv2.putText(frame, "Yaw: " + str(round(yaw))  + "°", (face.get("eye_dx_out")[0], 140),
                             1, 1, (255, 255, 255), 1, cv2.LINE_AA)
-        except Exception:
-            print(Exception.with_traceback)
-        
+
+        except:
+            print("Error during info display")
+            
+        try:
+            cv2.putText(frame, "Face facing camera: " + str(int(face_facing)), (face.get("eye_dx_out")[0], 190),
+                        0, 1, (255, 255, 255), 1, cv2.LINE_AA)
+            
+            cv2.putText(frame, "Gaze facing camera: " + str(int(gaze_facing)), (face.get("eye_dx_out")[0], 220),
+                        0, 1, (255, 255, 255), 1, cv2.LINE_AA)
+        except:
+            print("Error during info display")
 
     cv2.imshow('frame',  frame)
-    # cv2.waitKey(10000)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-
 vid.release()
-quit
