@@ -65,10 +65,10 @@ class PnPSolver:
             
             dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
 
-        print("camera matrix: ")
-        print(camera_matrix)
-        print("distortion coefficients: ")
-        print(dist_coeffs)
+        #print("camera matrix: ")
+        #print(camera_matrix)
+        #print("distortion coefficients: ")
+        #print(dist_coeffs)
 
 
 

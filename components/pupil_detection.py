@@ -3,6 +3,10 @@ import cv2
 from math import sqrt
 from queue import *
 
+WEIGHT_DIVISOR = 1.0
+GRADIENT_THRESHOLD = 50.0
+THRESHOLD_VALUE = 0.8
+
 
 class PupilDetection():
     def __init__(self, accuracy = 50, blur_size = 3) -> None:
@@ -18,7 +22,7 @@ class PupilDetection():
         rows, cols = src.shape
         return cv2.resize(src, (self.ACCURACY, int((self.ACCURACY / cols) * rows)))
     
-    def _test_possible_centers(self, x, y, gx, gy, arr, weight_matrix, enable_weight=True, weight_divisor=1):
+    def _test_possible_centers(self, x, y, gx, gy, arr, weight_matrix, enable_weight=True, weight_divisor=WEIGHT_DIVISOR):
         rows, cols = arr.shape
         for row in range (rows):
             for col in range(cols):
@@ -32,7 +36,10 @@ class PupilDetection():
                 
                 dot_product = max(0.0, dx * gx + dy * gy)
                 
-                arr[row][col] += dot_product * dot_product * int(enable_weight)*(weight_matrix[row][col]/weight_divisor)
+                if enable_weight:
+                    arr[row][col] += dot_product * dot_product * (weight_matrix[row][col]/weight_divisor)
+                else:
+                    arr[row][col] += dot_product * dot_product
         
         return arr
     
@@ -46,7 +53,7 @@ class PupilDetection():
                 matrix[row][col]=sqrt(gx*gx+gy*gy)
         return matrix
     
-    def _compute_threshold(self, magnitude_matrix, factor=50.0):
+    def _compute_threshold(self, magnitude_matrix, factor=GRADIENT_THRESHOLD):
         mean_magn_grad, std_magn_grad = cv2.meanStdDev(magnitude_matrix)
         rows, cols = np.shape(magnitude_matrix)
         std_dev = std_magn_grad[0]/sqrt(rows*cols)
@@ -55,7 +62,7 @@ class PupilDetection():
     def _flood_should_push_point(self, dir, mat):
         px, py = dir
         rows, cols = np.shape(mat)
-        return px >= 0 and px < cols and py >= 0 and py < rows
+        return (px >= 0 and px < cols and py >= 0 and py < rows)
         
     def _flood_kill_edges(self, mat):
         rows, cols = np.shape(mat)
@@ -87,7 +94,7 @@ class PupilDetection():
         out = np.zeros((rows, cols), dtype='float64')
         mat = mat.astype(float)
         for row in range(rows):
-            out[row][0] = mat[row][1] - mat[row][1]
+            out[row][0] = mat[row][1] - mat[row][1] #pyelike was [1]
             for col in range(cols - 1):
                 out[row][col] = (mat[row][col+1] - mat[row][col-1])/2.0
             out[row][cols - 1] = (mat[row][cols - 1] - mat[row][cols - 2])
@@ -118,12 +125,17 @@ class PupilDetection():
                 mag = magnitude_matrix[row][col]
                 grad_arr_x[row][col] = gx/mag if mag>gradient_threshold else 0.0
                 grad_arr_y[row][col] = gy/mag if mag>gradient_threshold else 0.0
-        
+                        
         #create weights
         weight = np.asarray(cv2.GaussianBlur(resized, (self.BLUR_SIZE, self.BLUR_SIZE), 0,0))
-        weight_rows, weight_cols = weight.shape
         
-        weight = 255 - weight
+        weight_arr = np.asarray(weight)
+
+        weight_rows, weight_cols = np.shape(weight_arr)
+        # invert the weight matrix
+        for y in range(weight_rows):
+            for x in range(weight_cols):
+                weight_arr[y][x] = 255-weight_arr[y][x]
         
         out_sum = np.zeros((resized_rows, resized_cols))
         out_sum_rows, out_sum_cols = np.shape(out_sum)
@@ -134,7 +146,7 @@ class PupilDetection():
                 gx, gy = grad_arr_x[row][col], grad_arr_y[row][col]
                 if gx==0.0 and gy==0:
                     continue
-                self._test_possible_centers(col, row, gx, gy, out_sum, weight)
+                self._test_possible_centers(col, row, gx, gy, out_sum, weight_arr)
         
         num_gradients = weight_rows*weight_cols
         out = out_sum.astype(np.float32)*(1/num_gradients)
@@ -142,7 +154,7 @@ class PupilDetection():
         _, max_val, _, max_p = cv2.minMaxLoc(out)
         #post_processing
         
-        flood_threshold = max_val*0.6
+        flood_threshold = max_val*THRESHOLD_VALUE
         ret, flood_clone = cv2.threshold(out, flood_threshold, 0.0, cv2.THRESH_TOZERO)
         mask = self._flood_kill_edges(flood_clone)
         _, max_val, _, max_p = cv2.minMaxLoc(out, mask)

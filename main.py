@@ -44,11 +44,19 @@ while(True):
                        face.get("eye_dx_bottom")[1]+eye_frame_padding),
                       (255, 0, 255), 1)
 
-        (pupil_sx_x, pupil_sx_y) = pupil_detection.detect_pupil(framebg[
+        eye_sx = framebg[
             face.get("eye_sx_top")[1] - eye_frame_padding: 
                 face.get("eye_sx_bottom")[1] + eye_frame_padding,
             face.get("eye_sx_in")[0] - eye_frame_padding: 
-                face.get("eye_sx_out")[0] + eye_frame_padding])
+                face.get("eye_sx_out")[0] + eye_frame_padding]
+
+        (pupil_sx_x, pupil_sx_y) = pupil_detection.detect_pupil(eye_sx)
+        
+        #cv2.circle(eye_sx, (pupil_sx_x, pupil_sx_y),10, (0, 255, 255), 1)
+
+        
+        #cv2.imshow('eye', eye_sx)
+        #cv2.waitKey()
 
         pupil_sx_y, pupil_sx_x = face.get("eye_sx_top")[1] - eye_frame_padding +pupil_sx_y, face.get("eye_sx_in")[0]  - eye_frame_padding + pupil_sx_x
 
