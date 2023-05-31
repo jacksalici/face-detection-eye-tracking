@@ -104,7 +104,7 @@ while(True):
                 cv2.circle(frame, (int(p[0]), int(p[1])),
                            2, (255, 255, 0), -1)
             
-            cv2.putText(frame, f"Pupil horizzontal ratios: {pupil_dx_center_h_ratio}, {pupil_sx_center_h_ratio} - {gaze_facing_direction}°", (face.get("eye_dx_out")[0], 160),
+            cv2.putText(frame, f"Pupil horizzontal ratios: {pupil_dx_center_h_ratio}, {pupil_sx_center_h_ratio}", (face.get("eye_dx_out")[0], 160),
                             1, 1, (255, 255, 255), 1, cv2.LINE_AA)
         except:
             print("Error during info display")
@@ -118,11 +118,11 @@ while(True):
                 nose_end_point2D[2].ravel().astype(int)), (0, 0, 255), 2)
 
             if roll and pitch and yaw:
-                cv2.putText(frame, "Roll: " + str(round(roll)) + "°", (face.get("eye_dx_out")[0], 100),
+                cv2.putText(frame, "Roll: " + str(round(roll)), (face.get("eye_dx_out")[0], 100),
                             1, 1, (255, 255, 255), 1, cv2.LINE_AA)
-                cv2.putText(frame, "Pitch: " + str(round(pitch))  + "°", (face.get("eye_dx_out")[0], 120),
+                cv2.putText(frame, "Pitch: " + str(round(pitch)), (face.get("eye_dx_out")[0], 120),
                             1, 1, (255, 255, 255), 1, cv2.LINE_AA)
-                cv2.putText(frame, "Yaw: " + str(round(yaw))  + "°", (face.get("eye_dx_out")[0], 140),
+                cv2.putText(frame, "Yaw: " + str(round(yaw)), (face.get("eye_dx_out")[0], 140),
                             1, 1, (255, 255, 255), 1, cv2.LINE_AA)
 
         except:
