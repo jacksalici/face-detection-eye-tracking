@@ -5,11 +5,11 @@ from queue import *
 
 WEIGHT_DIVISOR = 1.0
 GRADIENT_THRESHOLD = 50.0
-THRESHOLD_VALUE = 0.8
+THRESHOLD_VALUE = 0.6
 
 
 class PupilDetection():
-    def __init__(self, accuracy = 50, blur_size = 3) -> None:
+    def __init__(self, accuracy = 50, blur_size = 5) -> None:
         self.ACCURACY = accuracy
         self.BLUR_SIZE = blur_size
     

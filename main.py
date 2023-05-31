@@ -16,10 +16,11 @@ pnp_solver = PnPSolver()
 
 while(True):
     ret, frame = vid.read()
-    #frame = cv2.imread("rdg.jpg")
+    #frame = cv2.imread("face1.png")
     framebg = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     for face in landmark_tracking.face_analysis(framebg):
+        
         image_points = np.array([
             face.get("nose"),
             face.get("chin"),
@@ -31,8 +32,9 @@ while(True):
 
         nose_end_point2D, pitch, yaw, roll = pnp_solver.pose(
             frame.shape, image_points)
+        
 
-        eye_frame_padding = 5
+        eye_frame_padding = 0
         cv2.rectangle(frame, (face.get("eye_sx_in")[0]-eye_frame_padding, 
                               face.get("eye_sx_top")[1]-eye_frame_padding),
                       (face.get("eye_sx_out")[0]+eye_frame_padding, 
@@ -44,28 +46,56 @@ while(True):
                        face.get("eye_dx_bottom")[1]+eye_frame_padding),
                       (255, 0, 255), 1)
 
-        eye_sx = framebg[
+        eyes = [framebg[
             face.get("eye_sx_top")[1] - eye_frame_padding: 
                 face.get("eye_sx_bottom")[1] + eye_frame_padding,
             face.get("eye_sx_in")[0] - eye_frame_padding: 
-                face.get("eye_sx_out")[0] + eye_frame_padding]
-
-        (pupil_sx_x, pupil_sx_y) = pupil_detection.detect_pupil(eye_sx)
-        
-        #cv2.circle(eye_sx, (pupil_sx_x, pupil_sx_y),10, (0, 255, 255), 1)
-
-        
-        #cv2.imshow('eye', eye_sx)
-        #cv2.waitKey()
-
-        pupil_sx_y, pupil_sx_x = face.get("eye_sx_top")[1] - eye_frame_padding +pupil_sx_y, face.get("eye_sx_in")[0]  - eye_frame_padding + pupil_sx_x
-
-        (pupil_dx_x, pupil_dx_y) = pupil_detection.detect_pupil(framebg[
+                face.get("eye_sx_out")[0] + eye_frame_padding],
+            framebg[
             face.get("eye_dx_top")[1]-eye_frame_padding: 
                 face.get("eye_dx_bottom")[1]+eye_frame_padding,
             face.get("eye_dx_out")[0]-eye_frame_padding: 
-                face.get("eye_sx_in")[0]+eye_frame_padding])
+                face.get("eye_dx_in")[0]+eye_frame_padding]
+        ] 
+        
+        
+        pupils = []
 
+        for eye in eyes:
+            #cv2.imshow('eye', eye)
+            #cv2.waitKey()
+
+            # Step 2: Apply Gaussian blur
+            blurred = cv2.GaussianBlur(eye, (5, 5), 0)
+
+            # Step 3: Apply adaptive threshold
+            thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+
+            cv2.imshow('eye', thresh)
+            cv2.waitKey()
+            # Step 4: Find contours
+            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            # Step 5: Find the largest contour
+            largest_contour = max(contours, key=cv2.contourArea)
+
+            # Step 6: Find the centroid
+            M = cv2.moments(largest_contour)
+            centroid_x = int(M["m10"] / M["m00"])
+            centroid_y = int(M["m01"] / M["m00"])
+                        
+            pupils.append((centroid_x, centroid_y))
+            
+        
+        
+        (pupil_sx_x, pupil_sx_y) = pupils[0]
+        (pupil_dx_x, pupil_dx_y) = pupils[1]
+        """
+        
+        pupil_sx_x, pupil_sx_y = pupil_detection.detect_pupil(eyes[0])
+        pupil_dx_x, pupil_dx_y = pupil_detection.detect_pupil(eyes[0])
+        """
+        pupil_sx_y, pupil_sx_x = face.get("eye_sx_top")[1] - eye_frame_padding +pupil_sx_y, face.get("eye_sx_in")[0]  - eye_frame_padding + pupil_sx_x
         pupil_dx_y, pupil_dx_x = face.get("eye_dx_top")[1] - eye_frame_padding +pupil_dx_y, face.get("eye_dx_out")[0]  - eye_frame_padding + pupil_dx_x
 
         cv2.circle(frame, (pupil_sx_x, pupil_sx_y),
@@ -77,7 +107,7 @@ while(True):
         for p in list(face.values())[1:]:
             cv2.circle(frame, (int(p[0]), int(p[1])),
                        2, (255, 255, 0), -1)
-
+        
         try:
             frame = cv2.line(frame, tuple(image_points[0].ravel().astype(int)), tuple(
                 nose_end_point2D[0].ravel().astype(int)), (255, 0, 0), 3)
@@ -95,6 +125,7 @@ while(True):
                             1, 1, (255, 255, 255), 1, cv2.LINE_AA)
         except Exception:
             print(Exception.with_traceback)
+        
 
     cv2.imshow('frame',  frame)
     # cv2.waitKey(10000)
@@ -104,3 +135,4 @@ while(True):
 
 
 vid.release()
+quit

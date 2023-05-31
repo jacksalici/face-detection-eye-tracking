@@ -19,6 +19,18 @@ class HaarCascade():
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
         return frame  
     
+    
+    def eye_detection(self, faces, frame):
+        eyes_ret = []
+        for (x, y, w, h) in faces:
+            roi_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)[y:y+h, x:x+w]
+            roi_color = frame[y:y+h, x:x+w]
+            eyes = self.eye_cascade.detectMultiScale(roi_gray)
+
+            eyes_ret.append(eyes)
+                
+        return eyes_ret
+    
     def eye_framing(self, faces, frame):
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
