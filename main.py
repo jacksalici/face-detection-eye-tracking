@@ -1,22 +1,13 @@
 from components.face_landmark import FaceLandmarkTracking
-from components.pupil_detection_2 import PupilDetection
+from components.pupil_detection import PupilDetection
+from components.pupil_detection_2 import PupilDetection as PupilDetection2
+
 from components.pnp_solver import PnPSolver
 
 import cv2
 import numpy as np
 
-
-vid = cv2.VideoCapture(0)
-
-landmark_tracking = FaceLandmarkTracking()
-pupil_detection = PupilDetection()
-pnp_solver = PnPSolver()  # to use the calibration (np.load('calib_results.npz'))
-
-face_facing = False
-gaze_facing = False
-
-while(True):
-    ret, frame = vid.read()  # frame = cv2.imread("face1.png")
+def tracking(frame):
     framebg = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     for face in landmark_tracking.face_analysis(framebg):
@@ -39,7 +30,7 @@ while(True):
         if abs(pitch) < face_facing_sensibility and abs(yaw) < face_facing_sensibility:
             face_facing = True
 
-        eye_frame_padding = 5+2
+        eye_frame_padding = 2
 
         eyes = [framebg[
             face.get("eye_sx_top")[1] - eye_frame_padding:
@@ -53,8 +44,10 @@ while(True):
                 face.get("eye_dx_in")[0]+eye_frame_padding]
                 ]
 
-        pupil_sx_x, pupil_sx_y = pupil_detection.detect_pupil(eyes[0], 0)
-        pupil_dx_x, pupil_dx_y = pupil_detection.detect_pupil(eyes[1], 1)
+        
+
+        pupil_sx_x, pupil_sx_y = pupil_detection_2.detect_pupil(eyes[0])
+        pupil_dx_x, pupil_dx_y = pupil_detection_2.detect_pupil(eyes[1])
 
         if pupil_sx_x and pupil_sx_y:
             pupil_sx_y, pupil_sx_x = face.get("eye_sx_top")[
@@ -68,10 +61,13 @@ while(True):
             pupil_dx_center_h_ratio = round((pupil_dx_x - face.get("eye_dx_out")[0]) / (face.get("eye_dx_in")[0] - face.get("eye_dx_out")[0]) - 0.5 ,2)
 
             gaze_facing = False
-            gaze_facing_direction = (pupil_dx_center_h_ratio + pupil_sx_center_h_ratio) #double of the mean between the directions [-1, 1]
-            gaze_facing_direction *= 50 #angle of view
+    
             
-            if face_facing or abs(gaze_facing_direction - yaw)<face_facing_sensibility:
+            if face_facing:
+                gaze_facing = True
+            elif yaw < 0 and abs(pupil_sx_center_h_ratio * 100 - yaw)<face_facing_sensibility:
+                gaze_facing = True
+            elif yaw > 0 and abs(pupil_dx_center_h_ratio * 100 - yaw)<face_facing_sensibility:
                 gaze_facing = True
             
         
@@ -129,17 +125,46 @@ while(True):
             print("Error during info display")
             
         try:
-            cv2.putText(frame, "Face facing camera: " + str(int(face_facing)), (face.get("eye_dx_out")[0], 190),
-                        0, 1, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, "Face facing camera: " + str(int(face_facing)), (face.get("eye_dx_out")[0], 180),
+                        1, 1, (255, 255, 255), 1, cv2.LINE_AA)
             
-            cv2.putText(frame, "Gaze facing camera: " + str(int(gaze_facing)), (face.get("eye_dx_out")[0], 220),
-                        0, 1, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, "Gaze facing camera: " + str(int(gaze_facing)), (face.get("eye_dx_out")[0], 200),
+                        1, 1, (255, 255, 255), 1, cv2.LINE_AA)
         except:
             print("Error during info display")
 
     cv2.imshow('frame',  frame)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+def init(video = False, path = 'face1.png'):
+    
+    if video:
+        vid = cv2.VideoCapture(0)
+        while(True):
+            ret, frame = vid.read()  
+            
+            tracking(frame)
 
-vid.release()
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        vid.release()
+    else:
+        frame = cv2.imread(path)   
+        tracking(frame)
+        cv2.waitKey()
+    
+    
+
+landmark_tracking = FaceLandmarkTracking()
+pupil_detection = PupilDetection()
+pupil_detection_2 = PupilDetection2()
+
+pnp_solver = PnPSolver()  # to use the calibration (np.load('calib_results.npz'))
+
+face_facing = False
+gaze_facing = False
+
+init(0, 'rdg.jpg')
+
+
+

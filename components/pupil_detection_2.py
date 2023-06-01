@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import random
 
 BLUR_RADIUS = 5
 
@@ -8,11 +9,11 @@ class PupilDetection():
     def __init__(self) -> None:
         pass
     
-    def detect_pupil(self, eye, index):
+    def detect_pupil(self, eye, index=random.randint(1,100)):
         if len(eye.shape)>2:
             eye = cv2.cvtColor(eye, cv2.COLOR_BGR2GRAY)
         
-        #eye = np.clip(eye * 1.25, 0, 255)
+        eye = np.clip(eye * 1.25, 0, 255)
         eye = eye.astype('uint8')
         
         eye = cv2.equalizeHist(eye)
@@ -22,12 +23,12 @@ class PupilDetection():
         blurred_eye = cv2.GaussianBlur(eye, (BLUR_RADIUS, BLUR_RADIUS), 0)
         
         
-        kernel = np.ones((5,5),np.uint8)
+        kernel = np.ones((3,3),np.uint8)
         erosion = cv2.erode(blurred_eye,kernel,iterations = 1)
         cv2.imshow("e"+str(index), erosion)
 
 
-        threshold = cv2.adaptiveThreshold(erosion,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY_INV,11,2)
+        threshold = cv2.adaptiveThreshold(erosion,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY_INV,51,-5)
         
         cv2.imshow("c"+str(index), threshold)
         # Contours
