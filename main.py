@@ -30,8 +30,8 @@ def tracking(frame, pupil_mode):
         if abs(pitch) < face_facing_sensibility and abs(yaw) < face_facing_sensibility:
             face_facing = True
 
-        eye_frame_horizontal_padding = 2
-        eye_frame_vertical_padding = 5
+        eye_frame_horizontal_padding = 0 
+        eye_frame_vertical_padding = 2
 
         eyes = [framebg[
             face.get("eye_sx_top")[1] - eye_frame_vertical_padding:

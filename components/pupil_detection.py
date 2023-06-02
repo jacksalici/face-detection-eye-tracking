@@ -3,26 +3,16 @@ import cv2
 from math import sqrt
 from queue import *
 
-#WEIGHT_DIVISOR = 1.0
-GRADIENT_THRESHOLD = 10
+GRADIENT_THRESHOLD_VALUE = 10
 BLUR_SIZE = 5
-#THRESHOLD_VALUE = 0.9
-max_eye_size=10
+POSTPROCESSING_THRESHOLD_VALUE = 0.9
+MAX_EYE_SIZE=10
+
 
 class PupilDetection():
-    def __init__(self) -> None:
-        #self.ACCURACY = accuracy
-        #self.BLUR_SIZE = blur_size
+    def __init__(self, postprocessing=False) -> None:
+        self.postprocessing = postprocessing
         pass
-    
-    def _unscale_point(self, point, orig):
-        h, w = orig.shape
-        ratio = self.ACCURACY/w
-        return (int(round(point[0]/ratio)),int(round(point[1]/ratio)))
-        
-    def _scale_to_fast_size(self,src):
-        rows, cols = src.shape
-        return cv2.resize(src, (self.ACCURACY, int((self.ACCURACY / cols) * rows)), interpolation = cv2.INTER_AREA)
     
     def _test_possible_centers(self, x, y, gx, gy, out, weight):
         rows, cols = out.shape
@@ -54,37 +44,41 @@ class PupilDetection():
     def _compute_dynamic_threshold(self, magnitude_matrix):
         (meanMagnGrad, meanMagnGrad) = cv2.meanStdDev(magnitude_matrix)
         stdDev=meanMagnGrad[0]/sqrt(magnitude_matrix.shape[0]*magnitude_matrix.shape[1])
-        return GRADIENT_THRESHOLD*stdDev+meanMagnGrad[0]
+        return GRADIENT_THRESHOLD_VALUE*stdDev+meanMagnGrad[0]
 
     def _flood_should_push_point(self, dir, mat):
         px, py = dir
         rows, cols = np.shape(mat)
-        return (px >= 0 and px < cols and py >= 0 and py < rows)
-        
+        if px >= 0 and px < cols and py >= 0 and py < rows:
+            return True
+        else:
+            return False
+            
     def _flood_kill_edges(self, mat):
         rows, cols = np.shape(mat)
-        
         cv2.rectangle(mat, (0,0), (cols, rows), 255)
-        
         mask = np.ones((rows, cols), dtype=np.uint8)
-        mask = mask*255
-        
-        queue = Queue()
-        
-        queue.put((0,0))
-        
-        while(queue.qsize()>0):
-            px,py=queue.get()
-            if mat[py][px]==0:
+        mask = mask * 255
+        to_do = Queue()
+        to_do.put((0,0))
+        while to_do.qsize() > 0:
+            px,py = to_do.get()
+            if mat[py][px] == 0:
                 continue
-            
-            for point in [(px+1,py), (px-1,py), (px,py+1), (px,py-1)]:
-                if self._flood_should_push_point(point, mat):
-                    queue.put(point)
-            
-            mat[py][px]=0.0
-            mask[py][px]=0
-    
+            right = (px + 1, py)
+            if self._flood_should_push_point(right, mat):
+                to_do.put(right)
+            left = (px - 1, py)
+            if self._flood_should_push_point(left, mat):
+                to_do.put(left)
+            down = (px, py + 1)
+            if self._flood_should_push_point(down, mat):
+                to_do.put(down)
+            top = (px, py - 1)
+            if self._flood_should_push_point(top, mat):
+                to_do.put(top)
+            mat[py][px] = 0.0
+            mask[py][px] = 0
         return mask
 
     def _compute_gradient(self, img): 
@@ -104,8 +98,8 @@ class PupilDetection():
             return (0, 0)
         eye_image = eye_image.astype(np.float32)
         scale_value=1.0
-        if(eye_image.shape[0] > max_eye_size or eye_image.shape[1] > max_eye_size):
-            scale_value=max(max_eye_size/float(eye_image.shape[0]),max_eye_size/float(eye_image.shape[1]))
+        if(eye_image.shape[0] > MAX_EYE_SIZE or eye_image.shape[1] > MAX_EYE_SIZE):
+            scale_value=max(MAX_EYE_SIZE/float(eye_image.shape[0]),MAX_EYE_SIZE/float(eye_image.shape[1]))
             eye_image=cv2.resize(eye_image,None, fx=scale_value,fy= scale_value, interpolation = cv2.INTER_AREA)
 
         
@@ -150,12 +144,15 @@ class PupilDetection():
         out= np.divide(out_sum, num_gradients*10)
                 
         _, max_val, _, max_p = cv2.minMaxLoc(out)
-        #post_processing
         
-        #flood_threshold = max_val*THRESHOLD_VALUE
-        #ret, flood_clone = cv2.threshold(out, flood_threshold, 0.0, cv2.THRESH_TOZERO)
-        #mask = self._flood_kill_edges(flood_clone)
-        #_, max_val, _, max_p = cv2.minMaxLoc(out, mask)
+        
+        #post_processing
+        if self.postprocessing:
+            flood_threshold = max_val*POSTPROCESSING_THRESHOLD_VALUE
+            ret, flood_clone = cv2.threshold(out, flood_threshold, 0.0, cv2.THRESH_TOZERO)
+            mask = self._flood_kill_edges(flood_clone)
+            _, max_val, _, max_p = cv2.minMaxLoc(out, mask)
+        
         max_p=(int(max_p[0]/scale_value),int(max_p[1]/scale_value))
         return max_p
         
