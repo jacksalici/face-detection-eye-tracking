@@ -7,7 +7,7 @@ from components.pnp_solver import PnPSolver
 import cv2
 import numpy as np
 
-def tracking(frame):
+def tracking(frame, pupil_mode):
     framebg = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     for face in landmark_tracking.face_analysis(framebg):
@@ -30,7 +30,7 @@ def tracking(frame):
         if abs(pitch) < face_facing_sensibility and abs(yaw) < face_facing_sensibility:
             face_facing = True
 
-        eye_frame_padding = 2
+        eye_frame_padding = 20
 
         eyes = [framebg[
             face.get("eye_sx_top")[1] - eye_frame_padding:
@@ -45,32 +45,31 @@ def tracking(frame):
                 ]
 
         
-
-        pupil_sx_x, pupil_sx_y = pupil_detection_2.detect_pupil(eyes[0])
-        pupil_dx_x, pupil_dx_y = pupil_detection_2.detect_pupil(eyes[1])
-
-        if pupil_sx_x and pupil_sx_y:
-            pupil_sx_y, pupil_sx_x = face.get("eye_sx_top")[
-                1] - eye_frame_padding + pupil_sx_y, face.get("eye_sx_in")[0] - eye_frame_padding + pupil_sx_x
-            pupil_dx_y, pupil_dx_x = face.get("eye_dx_top")[
-                1] - eye_frame_padding + pupil_dx_y, face.get("eye_dx_out")[0] - eye_frame_padding + pupil_dx_x
-            
-            
-            # horizzontal ratio that expresses how centered the pupil is within the eyes, from -0.5 to 0.5, 0 is center. 
-            pupil_sx_center_h_ratio = round((pupil_sx_x - face.get("eye_sx_in")[0]) / (face.get("eye_sx_out")[0] - face.get("eye_sx_in")[0]) - 0.5 ,2) 
-            pupil_dx_center_h_ratio = round((pupil_dx_x - face.get("eye_dx_out")[0]) / (face.get("eye_dx_in")[0] - face.get("eye_dx_out")[0]) - 0.5 ,2)
-
-            gaze_facing = False
-    
-            
-            if face_facing:
-                gaze_facing = True
-            elif yaw < 0 and abs(pupil_sx_center_h_ratio * 100 - yaw)<face_facing_sensibility:
-                gaze_facing = True
-            elif yaw > 0 and abs(pupil_dx_center_h_ratio * 100 - yaw)<face_facing_sensibility:
-                gaze_facing = True
-            
+        pupil_modes = [pupil_detection, pupil_detection_2]
+        pupil_sx_x, pupil_sx_y = pupil_modes[pupil_mode].detect_pupil(eyes[0])
+        pupil_dx_x, pupil_dx_y = pupil_modes[pupil_mode].detect_pupil(eyes[1])
         
+        
+
+        pupil_sx_y, pupil_sx_x = face.get("eye_sx_top")[
+            1] - eye_frame_padding + pupil_sx_y, face.get("eye_sx_in")[0] - eye_frame_padding + pupil_sx_x
+        pupil_dx_y, pupil_dx_x = face.get("eye_dx_top")[
+            1] - eye_frame_padding + pupil_dx_y, face.get("eye_dx_out")[0] - eye_frame_padding + pupil_dx_x
+        
+        
+        # horizzontal ratio that expresses how centered the pupil is within the eyes, from -0.5 to 0.5, 0 is center. 
+        pupil_sx_center_h_ratio = round((pupil_sx_x - face.get("eye_sx_in")[0]) / (face.get("eye_sx_out")[0] - face.get("eye_sx_in")[0]) - 0.5 ,2) 
+        pupil_dx_center_h_ratio = round((pupil_dx_x - face.get("eye_dx_out")[0]) / (face.get("eye_dx_in")[0] - face.get("eye_dx_out")[0]) - 0.5 ,2)
+        gaze_facing = False
+
+        
+        if face_facing:
+            gaze_facing = True
+        elif yaw < 0 and abs(pupil_sx_center_h_ratio * 100 - yaw)<face_facing_sensibility:
+            gaze_facing = True
+        elif yaw > 0 and abs(pupil_dx_center_h_ratio * 100 - yaw)<face_facing_sensibility:
+            gaze_facing = True
+            
         
         try:
             cv2.rectangle(frame, (face.get("box")[0], face.get("box")[1]), (face.get("box")[
@@ -135,14 +134,14 @@ def tracking(frame):
 
     cv2.imshow('frame',  frame)
 
-def init(video = False, path = 'face1.png'):
+def init(video = False, pupil_mode = 1, path = 'face1.png'):
     
     if video:
         vid = cv2.VideoCapture(0)
         while(True):
             ret, frame = vid.read()  
             
-            tracking(frame)
+            tracking(frame, pupil_mode)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -150,7 +149,7 @@ def init(video = False, path = 'face1.png'):
         vid.release()
     else:
         frame = cv2.imread(path)   
-        tracking(frame)
+        tracking(frame, pupil_mode)
         cv2.waitKey()
     
     
@@ -164,7 +163,7 @@ pnp_solver = PnPSolver()  # to use the calibration (np.load('calib_results.npz')
 face_facing = False
 gaze_facing = False
 
-init(0, 'rdg.jpg')
+init(1, 0)
 
 
 
