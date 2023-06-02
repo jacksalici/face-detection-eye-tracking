@@ -3,15 +3,17 @@ import cv2
 from math import sqrt
 from queue import *
 
-WEIGHT_DIVISOR = 1.0
-GRADIENT_THRESHOLD = 20.0
-THRESHOLD_VALUE = 0.6
+#WEIGHT_DIVISOR = 1.0
+GRADIENT_THRESHOLD = 10
+BLUR_SIZE = 5
+#THRESHOLD_VALUE = 0.9
 max_eye_size=10
 
 class PupilDetection():
-    def __init__(self, accuracy = 40, blur_size = 5) -> None:
-        self.ACCURACY = accuracy
-        self.BLUR_SIZE = blur_size
+    def __init__(self) -> None:
+        #self.ACCURACY = accuracy
+        #self.BLUR_SIZE = blur_size
+        pass
     
     def _unscale_point(self, point, orig):
         h, w = orig.shape
@@ -26,7 +28,7 @@ class PupilDetection():
         rows, cols = out.shape
         for row in range (rows):
             for col in range(cols):
-                dx, dy = x-row, y-col 
+                dx, dy = x-col, y-row 
                 
                 if dx==0 and dy==0:
                     continue
@@ -49,10 +51,10 @@ class PupilDetection():
                 matrix[row][col]=sqrt((gx*gx)+(gy*gy))
         return matrix
     
-    def _compute_dynamic_threshold(self, magnitude_matrix, factor=GRADIENT_THRESHOLD):
+    def _compute_dynamic_threshold(self, magnitude_matrix):
         (meanMagnGrad, meanMagnGrad) = cv2.meanStdDev(magnitude_matrix)
         stdDev=meanMagnGrad[0]/sqrt(magnitude_matrix.shape[0]*magnitude_matrix.shape[1])
-        return factor*stdDev+meanMagnGrad[0]
+        return GRADIENT_THRESHOLD*stdDev+meanMagnGrad[0]
 
     def _flood_should_push_point(self, dir, mat):
         px, py = dir
@@ -116,7 +118,7 @@ class PupilDetection():
         gradient_threshold = self._compute_dynamic_threshold(magnitude_matrix)
 
         for y in range(eye_image.shape[0]):
-            for x in range(eye_image.shape[0]):
+            for x in range(eye_image.shape[1]):
                 if(magnitude_matrix[y][x]>gradient_threshold):
                     grad_arr_x[y][x]=grad_arr_x[y][x]/magnitude_matrix[y][x]
                     grad_arr_y[y][x]=grad_arr_y[y][x]/magnitude_matrix[y][x]
@@ -125,12 +127,11 @@ class PupilDetection():
                     grad_arr_y[y][x]=0.0
                         
         #create weights
-        weight = cv2.GaussianBlur(eye_image, (self.BLUR_SIZE, self.BLUR_SIZE), 0)
+        weight = cv2.GaussianBlur(eye_image, (BLUR_SIZE, BLUR_SIZE), 0)
         
-        weight_rows, weight_cols = np.shape(weight)
         # invert the weight matrix
-        for y in range(weight_rows):
-            for x in range(weight_cols):
+        for y in range(weight.shape[0]):
+            for x in range(weight.shape[1]):
                 weight[y][x] = 255-weight[y][x]
         
         out_sum = np.zeros((eye_image.shape[0],eye_image.shape[1]), dtype=np.float32)
@@ -145,7 +146,7 @@ class PupilDetection():
                     continue
                 self._test_possible_centers(col, row, gx, gy, out_sum, weight)
         
-        num_gradients = weight_rows*weight_cols
+        num_gradients = weight.shape[0]*weight.shape[1]
         out= np.divide(out_sum, num_gradients*10)
                 
         _, max_val, _, max_p = cv2.minMaxLoc(out)

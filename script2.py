@@ -153,6 +153,7 @@ def getEyePos(corners,img):
 
 
 def findEyeCenter(eyeImage, offset):
+    cv2.imshow("ciao", eyeImage)
     if (len(eyeImage.shape) <= 0 or eyeImage.shape[0] <= 0 or eyeImage.shape[1] <= 0):
         return tuple(map(operator.add, (0, 0), offset))
     eyeImg = np.asarray(cv2.cvtColor(eyeImage, cv2.COLOR_BGR2GRAY))
@@ -214,9 +215,6 @@ while 1:
     #test = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     faces_data= analyseFace(test)
-    print(len(faces_data))
-
-
 
     eye_centers=[]
     for index,POI in enumerate(faces_data):

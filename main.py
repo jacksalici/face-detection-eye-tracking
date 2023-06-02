@@ -30,18 +30,19 @@ def tracking(frame, pupil_mode):
         if abs(pitch) < face_facing_sensibility and abs(yaw) < face_facing_sensibility:
             face_facing = True
 
-        eye_frame_padding = 20
+        eye_frame_horizontal_padding = 2
+        eye_frame_vertical_padding = 5
 
         eyes = [framebg[
-            face.get("eye_sx_top")[1] - eye_frame_padding:
-                face.get("eye_sx_bottom")[1] + eye_frame_padding,
-            face.get("eye_sx_in")[0] - eye_frame_padding:
-                face.get("eye_sx_out")[0] + eye_frame_padding],
+            face.get("eye_sx_top")[1] - eye_frame_vertical_padding:
+                face.get("eye_sx_bottom")[1] + eye_frame_vertical_padding,
+            face.get("eye_sx_in")[0] - eye_frame_horizontal_padding:
+                face.get("eye_sx_out")[0] + eye_frame_horizontal_padding],
                 framebg[
-            face.get("eye_dx_top")[1]-eye_frame_padding:
-                face.get("eye_dx_bottom")[1]+eye_frame_padding,
-            face.get("eye_dx_out")[0]-eye_frame_padding:
-                face.get("eye_dx_in")[0]+eye_frame_padding]
+            face.get("eye_dx_top")[1]-eye_frame_vertical_padding:
+                face.get("eye_dx_bottom")[1]+eye_frame_vertical_padding,
+            face.get("eye_dx_out")[0]-eye_frame_horizontal_padding:
+                face.get("eye_dx_in")[0]+eye_frame_horizontal_padding]
                 ]
 
         
@@ -52,9 +53,9 @@ def tracking(frame, pupil_mode):
         
 
         pupil_sx_y, pupil_sx_x = face.get("eye_sx_top")[
-            1] - eye_frame_padding + pupil_sx_y, face.get("eye_sx_in")[0] - eye_frame_padding + pupil_sx_x
+            1] - eye_frame_vertical_padding + pupil_sx_y, face.get("eye_sx_in")[0] - eye_frame_horizontal_padding + pupil_sx_x
         pupil_dx_y, pupil_dx_x = face.get("eye_dx_top")[
-            1] - eye_frame_padding + pupil_dx_y, face.get("eye_dx_out")[0] - eye_frame_padding + pupil_dx_x
+            1] - eye_frame_vertical_padding + pupil_dx_y, face.get("eye_dx_out")[0] - eye_frame_horizontal_padding + pupil_dx_x
         
         
         # horizzontal ratio that expresses how centered the pupil is within the eyes, from -0.5 to 0.5, 0 is center. 
@@ -75,15 +76,15 @@ def tracking(frame, pupil_mode):
             cv2.rectangle(frame, (face.get("box")[0], face.get("box")[1]), (face.get("box")[
                           0]+face.get("box")[2], face.get("box")[1]+face.get("box")[3]), (255, 0, 255), 2)
 
-            cv2.rectangle(frame, (face.get("eye_sx_in")[0]-eye_frame_padding,
-                                  face.get("eye_sx_top")[1]-eye_frame_padding),
-                          (face.get("eye_sx_out")[0]+eye_frame_padding,
-                           face.get("eye_sx_bottom")[1]+eye_frame_padding),
+            cv2.rectangle(frame, (face.get("eye_sx_in")[0]-eye_frame_horizontal_padding,
+                                  face.get("eye_sx_top")[1]-eye_frame_vertical_padding),
+                          (face.get("eye_sx_out")[0]+eye_frame_horizontal_padding,
+                           face.get("eye_sx_bottom")[1]+eye_frame_vertical_padding),
                           (255, 0, 255), 2)
-            cv2.rectangle(frame, (face.get("eye_dx_out")[0]-eye_frame_padding,
-                                  face.get("eye_dx_top")[1]-eye_frame_padding),
-                          (face.get("eye_dx_in")[0]+eye_frame_padding,
-                           face.get("eye_dx_bottom")[1]+eye_frame_padding),
+            cv2.rectangle(frame, (face.get("eye_dx_out")[0]-eye_frame_horizontal_padding,
+                                  face.get("eye_dx_top")[1]-eye_frame_vertical_padding),
+                          (face.get("eye_dx_in")[0]+eye_frame_horizontal_padding,
+                           face.get("eye_dx_bottom")[1]+eye_frame_vertical_padding),
                           (255, 0, 255), 2)
         except:
             print("Error during info display")
