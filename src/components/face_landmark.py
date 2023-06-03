@@ -5,9 +5,8 @@ import cv2
 
 
 class FaceLandmarkTracking():
-    def __init__(self) -> None:
-        self.landmark_predictor = dlib.shape_predictor(
-            'src/resources/predictors/shape_predictor_68_face_landmarks.dat')
+    def __init__(self, shape_predictor_path) -> None:
+        self.landmark_predictor = dlib.shape_predictor(shape_predictor_path)
         self.face_detector = dlib.get_frontal_face_detector()
 
     def face_analysis(self, frame):

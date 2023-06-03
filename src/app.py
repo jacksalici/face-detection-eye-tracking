@@ -5,6 +5,7 @@ from components.pnp_solver import PnPSolver
 
 import cv2
 import numpy as np
+import os
 
 
 def tracking(frame, pupil_detection_mode):
@@ -155,7 +156,7 @@ def init(video=False, pupil_detection_mode="grad_means", image_path='images/face
         cv2.waitKey()
 
 
-landmark_tracking = FaceLandmarkTracking()
+landmark_tracking = FaceLandmarkTracking(os.path.join('resources','predictors','shape_predictor_68_face_landmarks.dat'))
 pupil_detection = PupilDetection()
 pupil_detection_2 = PupilDetection2()
 
