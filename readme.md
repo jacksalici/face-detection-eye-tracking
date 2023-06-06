@@ -1,4 +1,4 @@
-# Face Detection and Eye Tracking  
+# Gaze Tracking
 
 > "Robot: ≪Are you looking me?≫"
 
