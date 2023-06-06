@@ -1,3 +1,3 @@
 run: 
-	cd src && python app.py
+	cd gaze_detection && python app.py
 
