@@ -103,7 +103,7 @@ class GazeDetection():
 
             vid.release()
         else:
-            if image_path is None:
+            if image_path != None:
                 frame = cv2.imread(image_path)
                 
                 frame = self.detect(frame)
