@@ -107,6 +107,14 @@ class GazeDetection():
                 cv2.waitKey()
 
     def detect(self, frame: np.ndarray):
+        """Detection method. Note that it is configurated during class initialization.
+
+        Args:
+            frame (np.ndarray): Single image to compute, BGR color channel.
+
+        Returns:
+            frame (np.ndarray), gaze_facing(bool): Frame computed, a gaze facing boolean value. 
+        """
 
         framebg = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = self.landmark_tracking.face_analysis(framebg)
