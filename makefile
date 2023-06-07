@@ -1,3 +1,3 @@
 run: 
-	python -m gaze_detection
+	python app.py
 
