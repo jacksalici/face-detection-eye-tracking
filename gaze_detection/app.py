@@ -23,11 +23,32 @@ class GazeDetection():
                  visual_verbose: bool = False,
                  save_image: bool = False,
                  print_on_serial: bool = True,
+                 serial_writing_step: float = 5,
                  serial_port: str = "/dev/tty.usbmodem1201",
                  annotate_image: bool = False,
                  crop_frame: bool = True,
-                 crop_frame_paddings: tuple = (0.5,0,0.15,0) #top, right, bottom, left / [0:1]
+                 crop_frame_paddings: tuple = (0.5,0,0.15,0), #top, right, bottom, left / [0:1]
+                 facing_sensibility: int = 20,
+                 eye_frame_padding: tuple = (0, 2), #horizontal, vertical
                  ) -> None:
+        """Detects gaze and/or pose estimation using various methods.
+
+        Args:
+            predictor_path (str, optional): Path to dlib predictor. Defaults to os.path.join('resources', 'predictors', 'shape_predictor_68_face_landmarks.dat').
+            pupil_detection_mode (str, optional): Choose between "filtering"/"grad_means"/"no_pupil": respectively, it uses filters to estimate pupil prection, or it uses means of gradient method by Timm 2011 or it does not compute them. Defaults to "grad_means".
+            video (bool, optional): The input stream can be directly captured inside the class. If false, you have to pass an image path to the next attribute or frame by frame calling the 'detect' method. Defaults to True.
+            image_path (str, optional): Valid if the video=False. Input image for a single detection. If you want to call the 'detect' method in your pipeline, keep defaults option. Defaults to None.
+            visual_verbose (bool, optional): If true, it will create more windows to show the partial steps. Useful only if pupil_detection_mode="filtering". Defaults to False.
+            save_image (bool, optional): If image_path is provided, if True, it will save the output image in the same path (not override). Defaults to False.
+            print_on_serial (bool, optional): Useful if you want to move a stepper motor to track images, if true, a float will be writed on the serial port. Defaults to True.
+            serial_port (str, optional): Serial port to use for writing. Defaults to "/dev/tty.usbmodem1201".
+            serial_writing_step (float, optional): Value printed on the serial to follow the robot. Each frame it will print that value until the biggest faces is centered. Default to 5.
+            annotate_image (bool, optional): If true, angles and landmark will be added to the image. Defaults to False.
+            crop_frame (bool, optional): If true, the return frame will be cropped on the biggest face. Defaults to True.
+            crop_frame_paddings (tuple, optional): Padding of the face cropped frame. The tuple has the format (top, right, bottom, left), values of 0 mean no padding, values of 1 mean a padding on that edge equal to the size of the frame in the perpendicular dimension. Defaults to (0.5,0,0.15,0).
+            facing_sensibility (int, oprional): angle sensibility for which the face will be considered facing. Defaults to 20. 
+            eye_frame_padding (tuple, optional): (horizontal, vertical) padding, in pixel of the eye applied before the pupil detection. Defaults to (0, 2).
+        """
         
         self.landmark_tracking = FaceLandmarkTracking(predictor_path)
 
@@ -48,13 +69,15 @@ class GazeDetection():
         
         self.print_on_serial = print_on_serial
         self.annotate_image = annotate_image
-        
+        self.eye_frame_padding = eye_frame_padding
         self.crop_frame = crop_frame
         self.crop_frame_paddings = crop_frame_paddings
+        self.facing_sensibility = facing_sensibility
         
         try:
             if print_on_serial:
                 self.serial_port = serial.Serial(serial_port, 9600)
+                self.serial_writing_step = serial_writing_step
         except:
             print_on_serial = False
             
@@ -64,7 +87,7 @@ class GazeDetection():
             while(True):
                 ret, frame = vid.read()
 
-                return_frame, _ = self.tracking(frame)
+                return_frame, _ = self.detect(frame)
 
                 cv2.imshow('frame',  return_frame)
                 
@@ -76,14 +99,14 @@ class GazeDetection():
             if image_path is None:
                 frame = cv2.imread(image_path)
                 
-                frame = self.tracking(frame)
+                frame = self.detect(frame)
                 
                 if save_image:
                     cv2.imwrite(os.path.splitext(image_path)[
                                 0] + '_edited' + os.path.splitext(image_path)[1], frame)
                 cv2.waitKey()
 
-    def tracking(self, frame: np.ndarray):
+    def detect(self, frame: np.ndarray):
 
         framebg = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = self.landmark_tracking.face_analysis(framebg)
@@ -106,13 +129,12 @@ class GazeDetection():
                 frame.shape, image_points)
 
             face_facing = False
-            face_facing_sensibility = 20
 
-            if abs(pitch) < face_facing_sensibility and abs(yaw) < face_facing_sensibility:
+            if abs(pitch) < self.facing_sensibility and abs(yaw) < self.facing_sensibility:
                 face_facing = True
 
-            eye_frame_horizontal_padding = 0
-            eye_frame_vertical_padding = 2
+            eye_frame_horizontal_padding = self.eye_frame_padding[0]
+            eye_frame_vertical_padding = self.eye_frame_padding[1]
             gaze_facing = face_facing
             
             if self.pupil_detection != None:
@@ -144,9 +166,9 @@ class GazeDetection():
             
                 if face_facing:
                     gaze_facing = True
-                elif yaw < 0 and abs(pupil_sx_center_h_ratio * 100 - yaw) < face_facing_sensibility:
+                elif yaw < 0 and abs(pupil_sx_center_h_ratio * 100 - yaw) < self.facing_sensibility:
                     gaze_facing = True
-                elif yaw > 0 and abs(pupil_dx_center_h_ratio * 100 - yaw) < face_facing_sensibility:
+                elif yaw > 0 and abs(pupil_dx_center_h_ratio * 100 - yaw) < self.facing_sensibility:
                     gaze_facing = True
 
             
@@ -232,9 +254,9 @@ class GazeDetection():
             try:
                 if self.print_on_serial:
                     if face_center<frame_center-100:
-                        self.serial_port.write(struct.pack('f', 5))
+                        self.serial_port.write(struct.pack('f', self.serial_writing_step))
                     elif face_center>frame_center+100:
-                        self.serial_port.write(struct.pack('f', -5))
+                        self.serial_port.write(struct.pack('f', -self.serial_writing_step))
             except:
                 print("WARNING: Error writing on serial")
                 
