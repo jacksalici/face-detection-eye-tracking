@@ -288,4 +288,3 @@ class GazeDetection():
             return frame, False
 
 
-g=GazeDetection(pupil_detection_mode=NO_PUPIL_DETECTION, annotate_image=True, print_on_serial=False)
