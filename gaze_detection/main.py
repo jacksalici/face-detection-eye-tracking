@@ -1,7 +1,7 @@
-from components.face_landmark import FaceLandmarkTracking, FaceLandmarkK
-from components.pupil_detection_means_gradients import PupilDetection as PupilDetectionMeansGradient
-from components.pupil_detection_filtering import PupilDetection as PupilDetectionFiltering
-from components.pnp_solver import PnPSolver
+from .components.face_landmark import FaceLandmarkTracking, FaceLandmarkK
+from .components.pupil_detection_means_gradients import PupilDetection as PupilDetectionMeansGradient
+from .components.pupil_detection_filtering import PupilDetection as PupilDetectionFiltering
+from .components.pnp_solver import PnPSolver
 
 import cv2
 import numpy as np
@@ -16,7 +16,7 @@ NO_PUPIL_DETECTION = "no_pupil"
 k = FaceLandmarkK()
 
 class GazeDetection():
-    def __init__(self, predictor_path: str = os.path.join('resources', 'predictors', 'shape_predictor_68_face_landmarks.dat'), 
+    def __init__(self, predictor_path: str = os.path.join('gaze_detection', 'resources', 'predictors', 'shape_predictor_68_face_landmarks.dat'), 
                  pupil_detection_mode: str = GRAD_MEANS, 
                  video: bool = True, 
                  image_path: str = None,

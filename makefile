@@ -1,3 +1,3 @@
 run: 
-	cd gaze_detection && python main.py
+	python -m gaze_detection.main
 
