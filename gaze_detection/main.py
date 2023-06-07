@@ -16,7 +16,7 @@ NO_PUPIL_DETECTION = "no_pupil"
 k = FaceLandmarkK()
 
 class GazeDetection():
-    def __init__(self, predictor_path: str = os.path.join('gaze_detection', 'resources', 'predictors', 'shape_predictor_68_face_landmarks.dat'), 
+    def __init__(self, predictor_path: str = None, 
                  pupil_detection_mode: str = GRAD_MEANS, 
                  video: bool = True, 
                  image_path: str = None,
@@ -49,8 +49,15 @@ class GazeDetection():
             facing_sensibility (int, oprional): angle sensibility for which the face will be considered facing. Defaults to 20. 
             eye_frame_padding (tuple, optional): (horizontal, vertical) padding, in pixel of the eye applied before the pupil detection. Defaults to (0, 2).
         """
+    
         
-        self.landmark_tracking = FaceLandmarkTracking(predictor_path)
+        try:
+            if predictor_path != None:
+                self.landmark_tracking = FaceLandmarkTracking(predictor_path)
+            else:
+                self.landmark_tracking = FaceLandmarkTracking(os.path.join('gaze_detection', 'resources', 'predictors', 'shape_predictor_68_face_landmarks.dat'))
+        except:
+            raise Exception("ERROR: Face landmark not found, please download and extract it from http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2 and pass the .dat file as argument.")
 
         self.pupil_detection_mode = pupil_detection_mode
         if (pupil_detection_mode == GRAD_MEANS):
