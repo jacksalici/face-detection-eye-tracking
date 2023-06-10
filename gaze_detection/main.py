@@ -268,10 +268,10 @@ class GazeDetection():
             
             try:
                 if self.print_on_serial:
-                    if face_center<frame_center-100:
-                        self.serial_port.write(struct.pack('f', self.serial_writing_step))
-                    elif face_center>frame_center+100:
+                    if face_center<frame_center-200:
                         self.serial_port.write(struct.pack('f', -self.serial_writing_step))
+                    elif face_center>frame_center+200:
+                        self.serial_port.write(struct.pack('f', self.serial_writing_step))
             except:
                 print("WARNING: Error writing on serial")
                 
