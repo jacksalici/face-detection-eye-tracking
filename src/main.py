@@ -55,7 +55,7 @@ class GazeDetection():
             if predictor_path != None:
                 self.landmark_tracking = FaceLandmarkTracking(predictor_path)
             else:
-                self.landmark_tracking = FaceLandmarkTracking(os.path.join('gaze_detection', 'resources', 'predictors', 'shape_predictor_68_face_landmarks.dat'))
+                self.landmark_tracking = FaceLandmarkTracking(os.path.join('src', 'resources', 'predictors', 'shape_predictor_68_face_landmarks.dat'))
         except:
             raise Exception("ERROR: Face landmark not found, please download and extract it from http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2 and pass the .dat file as argument.")
 
@@ -106,21 +106,22 @@ class GazeDetection():
             if image_path != None:
                 frame = cv2.imread(image_path)
                 
-                frame = self.detect(frame)
+                frame, _ = self.detect(frame)
                 
                 if save_image:
                     cv2.imwrite(os.path.splitext(image_path)[
                                 0] + '_edited' + os.path.splitext(image_path)[1], frame)
                 cv2.waitKey()
 
-    def detect(self, frame: np.ndarray):
+    def detect(self, frame: np.ndarray, return_info: bool = False):
         """Detection method. Note that it is configurated during class initialization.
 
         Args:
             frame (np.ndarray): Single image to compute, BGR color channel.
+            return_info (bool, optional): If true, the function also returns a dictionary with pose estimation and pupil localization.
 
         Returns:
-            frame (np.ndarray), gaze_facing(bool): Frame computed, a gaze facing boolean value. 
+            frame (np.ndarray), gaze_facing(bool): Frame computed, a gaze facing boolean value. If retrun_info = True, it also returns info(dict) 
         """
 
         framebg = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -128,6 +129,8 @@ class GazeDetection():
         
         biggest_face_index = 0
         biggest_face_area = 0
+        
+        info = {}
 
         for face_index, face in enumerate (faces):
 
@@ -142,6 +145,10 @@ class GazeDetection():
 
             nose_end_point2D, pitch, yaw, roll = self.pnp_solver.pose(
                 frame.shape, image_points)
+
+            info["pitch"] = pitch
+            info["yaw"] = yaw
+            info ["roll"] = roll
 
             face_facing = False
 
@@ -167,12 +174,17 @@ class GazeDetection():
 
                 pupil_sx_x, pupil_sx_y = self.pupil_detection.detect_pupil(eyes[0])
                 pupil_dx_x, pupil_dx_y = self.pupil_detection.detect_pupil(eyes[1])
+                
+                
 
                 pupil_sx_y, pupil_sx_x = face.get(k.EYE_SX_TOP)[
                     1] - eye_frame_vertical_padding + pupil_sx_y, face.get(k.EYE_SX_IN)[0] - eye_frame_horizontal_padding + pupil_sx_x
                 pupil_dx_y, pupil_dx_x = face.get(k.EYE_DX_TOP)[
                     1] - eye_frame_vertical_padding + pupil_dx_y, face.get(k.EYE_DX_OUT)[0] - eye_frame_horizontal_padding + pupil_dx_x
 
+
+                info["sx_eye"] = [pupil_sx_x, pupil_sx_y]
+                info["dx_eye"] = [pupil_dx_x, pupil_dx_y]
                 # horizzontal ratio that expresses how centered the pupil is within the eyes, from -0.5 to 0.5, 0 is center.
                 pupil_sx_center_h_ratio = round((pupil_sx_x - face.get(k.EYE_SX_IN)[0]) / (
                     face.get(k.EYE_SX_OUT)[0] - face.get(k.EYE_SX_IN)[0]) - 0.5, 2)
@@ -277,14 +289,14 @@ class GazeDetection():
                 
             
             if self.crop_frame:
-                
-                return frame[max(int(fy-fh*self.crop_frame_paddings[0]),0):min(fy+int(fh*(1+self.crop_frame_paddings[2])), frame.shape[0]), 
-                             max(int(fx-fw*self.crop_frame_paddings[3]),0):min(fx+int(fw*(1+self.crop_frame_paddings[1])), frame.shape[1])], gaze_facing
-            else:
-                return frame, gaze_facing
-        
-        else:
-            
-            return frame, False
+                frame = frame[max(int(fy-fh*self.crop_frame_paddings[0]),0):min(fy+int(fh*(1+self.crop_frame_paddings[2])), frame.shape[0]), 
+                             max(int(fx-fw*self.crop_frame_paddings[3]),0):min(fx+int(fw*(1+self.crop_frame_paddings[1])), frame.shape[1])]
 
+        else:
+            gaze_facing = False
+        
+        if return_info == False:
+            return frame, gaze_facing
+        else:
+            return frame, gaze_facing, return_info
 
