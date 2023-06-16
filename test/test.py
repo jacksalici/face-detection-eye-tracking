@@ -1,3 +1,7 @@
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
 from src.main import GazeDetection
 import cv2
 import csv
