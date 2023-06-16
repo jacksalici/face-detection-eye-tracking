@@ -148,7 +148,7 @@ class GazeDetection():
 
             info["pitch"] = pitch
             info["yaw"] = yaw
-            info ["roll"] = roll
+            info["roll"] = roll
 
             face_facing = False
 
@@ -298,5 +298,5 @@ class GazeDetection():
         if return_info == False:
             return frame, gaze_facing
         else:
-            return frame, gaze_facing, return_info
+            return frame, gaze_facing, info
 
