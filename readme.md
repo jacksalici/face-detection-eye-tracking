@@ -43,6 +43,9 @@ it is partially occluded*
 
 We have not already finished the fourth and last step of this first part but we achieved some theoretical detail. We are going to solve the so-called Perspective-n-Point (PnP) pose computation problem, computing the direction of the gaze starting from the found point. We already found some interesting methods to achieve our goal and in the next weeks, we will try to develop the best one.
 
+## Testing
+Time for computing means of gradients for pupil detection: 169.99545860290527
+Time for computing filtering for pupil detection: 42.86112999916077
 
 # References
 
