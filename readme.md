@@ -47,6 +47,15 @@ We have not already finished the fourth and last step of this first part but we 
 Time for computing means of gradients for pupil detection: 169.99545860290527
 Time for computing filtering for pupil detection: 42.86112999916077
 
+MEANS_OF_GRADIENTS
+Removed outliers: 3
+Mean: 3.003892424456261
+Std Dev: 2.2201800540169616
+FILTERING
+Removed outliers: 3
+Mean: 3.198455476190354
+Std Dev: 1.1560352421915776
+
 # References
 
 - Timm, F., & Barth, E. (2011). Accurate eye centre localisation by means of gradients. Visapp, 11, 125-130
