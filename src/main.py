@@ -108,6 +108,8 @@ class GazeDetection():
                 
                 frame, _ = self.detect(frame)
                 
+                cv2.imshow('frame', frame)
+                
                 if save_image:
                     cv2.imwrite(os.path.splitext(image_path)[
                                 0] + '_edited' + os.path.splitext(image_path)[1], frame)
