@@ -1,14 +1,14 @@
-# Gaze Tracking
+# Gaze Detection
 
 > "Robot: ≪Are you looking me?≫"
 
-This repo is part of the Computer Vision course final project. The goal of this first part of the pipeline is to detect faces present in the input of the image stream and analyse each of them to learn if the eyes are gazing into the camera. To achieve this result, we studied a process composed of four different steps: 
+This repo is part of the Computer Vision course final project. The goal of this first part of the pipeline is to detect faces present in the input of the image stream and analyze each of them to learn if the eyes are gazing into the camera. To achieve this result, we studied a process composed of four different steps: 
 1. face detection, 
 2. facial landmark detection, 
 3. facial pose estimation, and finally
-4. precise pupil localisation. 
+4. precise pupil localization. 
 
-The facial pose estimation is needed to know if the person is facing to the camera and, in that case, the pupil localisation is computed and we applied heuristic threshold to approximate whether the gaze is following the face direction. In the next paragraphs we will discuss the choice of this implementation and why we don't computed the estimation directly from the eye.
+The facial pose estimation is needed to know if the person is facing the camera and, in that case, the pupil localization is computed and we applied a heuristic threshold to approximate whether the gaze is following the face direction. In the next paragraphs, we will discuss the choice of this implementation and why we don't compute the estimation directly from the eye.
 
 ## Face detection
 
@@ -22,7 +22,7 @@ During our first tests, we used the Haar Cascade classifier that is based on the
 
 _Comparison between two different classical face detection algorithms. They were tested on 35887 images containing a single image. They reach an accuracy of 0,70 and 0,57 respectively. Test made on a 2020 M1 MacBook Air._
 
-Although it may not be the best testing scenario since the faces are often occluded and the test we made not measures important metrics like precision and recall, it has been a very quick way to verify how both methods perform under real life like scenario. We had seen that dlib method handles better occlusions but moreover, is much more rotation invariant then Viola-Jones.
+Although it may not be the best testing scenario since the faces are often occluded and the test we made not measures important metrics like precision and recall, it has been a very quick way to verify how both methods perform under real-life scenario. We had seen that dlib method handles better occlusions but moreover, is much more rotation invariant than Viola-Jones.
 
 ## Facial landmarks detection
 
@@ -90,15 +90,15 @@ Having $R$,  we finally found pitch, roll and yaw of the faces computing the Eul
 $$\text{Pitch} = \text{atan2}(r_{32}, r_{33}) $$ $$ \text{Yaw} = \text{atan2}(-r_{31}, \sqrt{r_{32}^2 + R_{33}^2}) $$ $$ \text{Roll} = \text{atan2}(r_{21}, r_{11})$$
 ![[pose.png]]
 
-Ideally the face is facing the camera if all the three Euler angles are 0. In the real life scenario, because of the image noise and the not always perfect accuracy of the angles found, we had to put a threshold under the which the face is considered to be facing. During the testing face, we have noticed that a threshold of 20° is fine.
+Ideally, the face is facing the camera if all three Euler angles are 0. In the real-life scenario, because of the image noise and the not-always-perfect accuracy of the angles found, we had to put a threshold under which the face is considered to be facing. During the testing face, we noticed that a threshold of 20° is fine.
 
 ## Precise eye center localization
 
-What if the face is not facing the camera but the person is actually looking at it due to the eye movements? At first tries we studied the problem of gaze detection trying to get the direction of the eye using a sort of perspective and point estimation. 
+What if the face is not facing the camera but the person is actually looking at it due to the eye movements? At first tries, we studied the problem of gaze detection trying to get the direction of the eye using a sort of perspective and point estimation. 
 
-This is actually really hard to get due several causes. The main problem is that the majority of gaze estimation cited in the literature make uses of a calibration procedure that measures the pupil movement while eyes are looking dots on a screen. This is not feasible with our pipeline, in which the detection happens "in the wild" captured from a moving camera.
+This is actually really hard to get due to several causes. The main problem is that the majority of gaze estimation cited in the literature makes use of a calibration procedure that measures pupil movement while the eyes are looking at dots on a screen. This is not feasible with our pipeline, in which the detection happens "in the wild" captured from a moving camera.
 
-To solve the problem we simply considered the pupil position (found using two different methods presented below) in respect to the eye corners. 
+To solve the problem we simply considered the pupil position (found using two different methods presented below) with respect to the eye corners. 
 
 The horizontal pupil ratio expresses how the pupil position within the eye, from -0.5 to 0.5, where 0.0 represent the position when the pupil is centered in the eye and 0.5 when the pupil is completely shifted towards the left corner. 
 
@@ -137,6 +137,7 @@ Looking for the largest one we find the pupil. See the figure for the applicatio
 
 ![Example of the above-reported results](face1_edited.png) 
 *Figure 1. Results of the first part of the pipeline.**
+
 ### Testing
 
 To compare the two method we run both of them over a dataset containing around 1500 images of faces, all hand labeled with the exact position of the pupils.
@@ -152,6 +153,7 @@ The results are down below. Please note that the mean and the standard deviation
 
 It has not been said that the first method is actually much more precise in low light environment, but for situation like ours real-time detection in normal environment, we have chose to use the filtering method. 
 
+## Camera tracking
 
 
 
