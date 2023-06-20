@@ -187,7 +187,7 @@ class GazeDetection():
 
                 info["sx_eye"] = [pupil_sx_x, pupil_sx_y]
                 info["dx_eye"] = [pupil_dx_x, pupil_dx_y]
-                # horizzontal ratio that expresses how centered the pupil is within the eyes, from -0.5 to 0.5, 0 is center.
+                # horizontal ratio that expresses how centered the pupil is within the eyes, from -0.5 to 0.5, 0 is center.
                 pupil_sx_center_h_ratio = round((pupil_sx_x - face.get(k.EYE_SX_IN)[0]) / (
                     face.get(k.EYE_SX_OUT)[0] - face.get(k.EYE_SX_IN)[0]) - 0.5, 2)
                 pupil_dx_center_h_ratio = round((pupil_dx_x - face.get(k.EYE_DX_OUT)[0]) / (

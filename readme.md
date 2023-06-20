@@ -2,7 +2,13 @@
 
 > "Robot: ≪Are you looking me?≫"
 
-This repo is part of the Computer Vision course final project. The goal of this first part of the pipeline is to detect faces present in the input of the image stream and analyse each of them to learn if the eyes are gazing into the camera. To achieve this result, we studied a process composed of four different steps: face detection, facial landmark detection to get eye corner position, and finally facial pose estimation and finally precise pupil localisation.
+This repo is part of the Computer Vision course final project. The goal of this first part of the pipeline is to detect faces present in the input of the image stream and analyse each of them to learn if the eyes are gazing into the camera. To achieve this result, we studied a process composed of four different steps: 
+1. face detection, 
+2. facial landmark detection, 
+3. facial pose estimation, and finally
+4. precise pupil localisation. 
+
+The facial pose estimation is needed to know if the person is facing to the camera and, in that case, the pupil localisation is computed and we applied heuristic threshold to approximate whether the gaze is following the face direction. In the next paragraphs we will discuss the choice of this implementation and why we don't computed the estimation directly from the eye.
 
 ## Face detection
 
@@ -81,27 +87,58 @@ To obtain the actual rotation matrix $R$ we used an iterative method  based on a
 
 Having $R$,  we finally found pitch, roll and yaw of the faces computing the Euler angles from the rotation matrix (get using the Rodrigues formula). 
 
-$$\text{Pitch} = \text{atan2}(r_{32}, r_{33}) , \text{Yaw} = \text{atan2}(-r_{31}, \sqrt{r_{32}^2 + R_{33}^2}) , \text{Roll} = \text{atan2}(r_{21}, r_{11})$$
+$$\text{Pitch} = \text{atan2}(r_{32}, r_{33}) $$ $$ \text{Yaw} = \text{atan2}(-r_{31}, \sqrt{r_{32}^2 + R_{33}^2}) $$ $$ \text{Roll} = \text{atan2}(r_{21}, r_{11})$$
 ![[pose.png]]
 
+Ideally the face is facing the camera if all the three Euler angles are 0. In the real life scenario, because of the image noise and the not always perfect accuracy of the angles found, we had to put a threshold under the which the face is considered to be facing. During the testing face, we have noticed that a threshold of 20° is fine.
 
 ## Precise eye center localization
 
-As the third step, we have read in detail the method proposed by [Timm and Barth, 2011]. This method lets us get the exact center of the pupil also in images with low resolution and bad lighting. The searched point can be found by comparing the gradient vector $g_i$ at position $x_i$ with the normalized displacement vector of a possible center $d_i$. Preprocessing and postprocessing are done to obtain optimal results.
+What if the face is not facing the camera but the person is actually looking at it due to the eye movements? At first tries we studied the problem of gaze detection trying to get the direction of the eye using a sort of perspective and point estimation. 
+
+This is actually really hard to get due several causes. The main problem is that the majority of gaze estimation cited in the literature make uses of a calibration procedure that measures the pupil movement while eyes are looking dots on a screen. This is not feasible with our pipeline, in which the detection happens "in the wild" captured from a moving camera.
+
+To solve the problem we simply considered the pupil position (found using two different methods presented below) in respect to the eye corners. 
+
+The horizontal pupil ratio expresses how the pupil position within the eye, from -0.5 to 0.5, where 0.0 represent the position when the pupil is centered in the eye and 0.5 when the pupil is completely shifted towards the left corner. 
+
+![[pupil_ratio.png]]
+The horizontal pupil ratio $hr$ can be found having the half length of the eye $e$ and the distance of the pupil from the eye corner $p$. $hr=(p / e) - 0.5$.
+
+Having the ratio we can compute:
+- if the eye is gazing toward the same direction of the face or, 
+- if the person is gazing to the camera when the face is facing somewhere else.
+
+As you probably have imagined this method is not suitable for an accurate estimation of the second point, since the direction of the eye is really biased from the distance between the person and the camera. The first point, on the other hand, can be solved quickly just setting a threshold as we have done in with the face facing.
+
+Regarding the second point, we made a proof of concept setting some parameters that are corrected with a person standing around 1m far from the camera. 
+
+### Means of Gradient
+
+To get the precise pupil localisation we have read in detail the method proposed by [Timm and Barth, 2011]. This method lets us get the exact center of the pupil also in images with low resolution and bad lighting. The searched point can be found by comparing the gradient vector $g_i$ at position $x_i$ with the displacement vector of a possible center $d_i$. 
 
 
 
-$$  c^*=\underset{c}{\arg\min} \frac{1}{N} \sum_{i=1}^{N}(d_i^\top g_i)^2 , $$ 
+$$  c^*=\underset{c}{\arg\min} \frac{1}{N} \sum_{i=1}^{N}w_c(d_i^\top g_i)^2 , $$ 
 
 $$ d_i = \frac{x_i-c}{||x_i-c||_2}, \forall{i}: ||g_i||_2=1 $$
 
-This method requires an input of a cropped image of an eye, so we used the information from the second step to get the needed processing. We then developed a script of the above-presented method, partially following an already existing work [Trishume].
+This method requires an input of a cropped image of an eye, so we used the information from the second step to get the needed processing. The authors of the method suggest also a preprocessing and post-processing phase that have been done to obtain optimal results. Preprocessing is made with the weight $w_c$ helps finding the dark pupils, since it is the grey value at $(c_x, c_y)$ of the smoothed and inverted input image. A gaussian filter also is needed to remove bright outliers like reflections of the glasses. Then as post-processing a threshold has been applied to remove possible results connected to borders, like eyebrows, glasses or hair. 
 
-At this point, having both the eye corners and the pupil center we can compute the final step.  
+We then developed a script of the above-presented method, partially following an already existing work [Trishume].
+
+### Filtering
+
+The proposed method is very interesting and works very well in difficult condition, but it is also very computational intense. In real-time systems may not be feasible. So, we tried and implemented a simple but effective filtering approach that works very well and requires less effort. 
+Having the cropped eye, 
+
+
+
+
+
 
 ![Example of the above-reported results](rdg_detected.jpg) 
-*Figure 1. Eye corners have been detected and marked in pink, the cropped regions where to find each eye center are contoured in yellow, and, finally, detected pupils positions is the green dot. Please note that the left eye has not been perfectly computed since
-it is partially occluded*
+*Figure 1. Eye corners have been detected and marked in pink, the cropped regions where to find each eye center are contoured in yellow, and, finally, detected pupils positions is the green dot.*
 
 
 
