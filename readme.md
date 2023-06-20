@@ -130,31 +130,30 @@ We then developed a script of the above-presented method, partially following an
 ### Filtering
 
 The proposed method is very interesting and works very well in difficult condition, but it is also very computational intense. In real-time systems may not be feasible. So, we tried and implemented a simple but effective filtering approach that works very well and requires less effort. 
-Having the cropped eye, 
+Having the cropped eye, we apply a series of filtering and preprocessing aimed to make stand out the pupil, that it is always the darker and more circular object in eye.
+In particular, we increased the contrast of the image and we equalised it. Then we applied a soft gaussian blur to remove the noise and a erosion filter that removes the smaller parts like the eyelashes. We then use the OpenCv adaptive thresholding method to binarize the image and lastly we get the counters of all of the blob. 
+Looking for the largest one we find the pupil. See the figure for the application of the approach. 
+
+
+![Example of the above-reported results](face1_edited.png) 
+*Figure 1. Results of the first part of the pipeline.**
+### Testing
+
+To compare the two method we run both of them over a dataset containing around 1500 images of faces, all hand labeled with the exact position of the pupils.
+We measures the just found pupils positions with comparing them with the labels, computing the Hausdorff distance (described in [Huttenlocher et all]) that is the maximum all the distances between each point of a set and the closest point in the other set. For each image of the dataset we found the distances and then computed the mean.$$H(A, B) = \max(h(A,B), h(B,A))$$ $$h(A,B) = \max_{a\in A}\min_{b \in B} ||a-b||$$
+The results are down below. Please note that the mean and the standard deviation are done after removing outliers that where completely wrong (Z-score greater than 5). It is pretty straightforward to notice how the average time to compute the position is about 4 time longer with the means of gradient then with filtering, the means are quite the same and despite the fact that the first method is slightly more precise, it has also an higher deviation.
+
+
+| |Mean|Std. Dev.| Outliers | Avg. time |
+|-|-|-|-|-|
+| Means of Gradient |3.004 | 2.220 | 3 | 0.112
+| Filtering | 3.198|1.156| 3 | 0.028
+
+
+It has not been said that the first method is actually much more precise in low light environment, but for situation like ours real-time detection in normal environment, we have chose to use the filtering method. 
 
 
 
-
-
-
-![Example of the above-reported results](rdg_detected.jpg) 
-*Figure 1. Eye corners have been detected and marked in pink, the cropped regions where to find each eye center are contoured in yellow, and, finally, detected pupils positions is the green dot.*
-
-
-
-
-## Testing
-Time for computing means of gradients for pupil detection: 169.99545860290527
-Time for computing filtering for pupil detection: 42.86112999916077
-
-MEANS_OF_GRADIENTS
-Removed outliers: 3
-Mean: 3.003892424456261
-Std Dev: 2.2201800540169616
-FILTERING
-Removed outliers: 3
-Mean: 3.198455476190354
-Std Dev: 1.1560352421915776
 
 # References
 
@@ -166,3 +165,4 @@ Std Dev: 1.1560352421915776
 - Zhao, W., Chellappa, R., & Phillips, P. J. (2003). A. Rosenfeld. Face recognition: a literature survey. ACM Computing Surveys, 35(4), 399-458.
 - https://www.bioid.com/uploads/AVBPA01BioID.pdf
 - IBUG 300-W Dataset
+https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=232073&casa_token=CiQ3K0lLncQAAAAA:Il1pj7-8q7zMGKOhCnsa4GWAc7p-cfxc6oDzT0QqqorPWQmzQcDFn2e0Thm_rQExtLmjzlm57g
