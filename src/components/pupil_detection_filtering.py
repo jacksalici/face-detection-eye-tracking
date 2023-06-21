@@ -26,7 +26,7 @@ class PupilDetection():
             frame (np.ndarray, optional): the actual image. Defaults to None.
         """
         
-        if (self.verbose and frame):
+        if (self.verbose and frame.any() != None):
             cv2.imshow(title, frame)
         else:
             pass

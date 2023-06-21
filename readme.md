@@ -123,15 +123,16 @@ $$  c^*=\underset{c}{\arg\min} \frac{1}{N} \sum_{i=1}^{N}w_c(d_i^\top g_i)^2 , $
 
 $$ d_i = \frac{x_i-c}{||x_i-c||_2}, \forall{i}: ||g_i||_2=1 $$
 
-This method requires an input of a cropped image of an eye, so we used the information from the second step to get the needed processing. The authors of the method suggest also a preprocessing and post-processing phase that have been done to obtain optimal results. Preprocessing is made with the weight $w_c$ helps finding the dark pupils, since it is the grey value at $(c_x, c_y)$ of the smoothed and inverted input image. A gaussian filter also is needed to remove bright outliers like reflections of the glasses. Then as post-processing a threshold has been applied to remove possible results connected to borders, like eyebrows, glasses or hair. 
+This method requires an input of a cropped image of an eye, so we used the information from the second step to get the needed processing. The authors of the method suggest also a preprocessing and post-processing phase that have been done to obtain optimal results. Preprocessing is made with the weight $w_c$ helps find the dark pupils since it is the grey value at $(c_x, c_y)$ of the smoothed and inverted input image. A Gaussian filter also is needed to remove bright outliers like reflections of the glasses. Then as post-processing, a threshold has been applied to remove possible results connected to borders, like eyebrows, glasses, or hair. 
 
-We then developed a script of the above-presented method, partially following an already existing work [Trishume].
+We then developed a script of the above-presented method, partially following an already existing work [Trishume] and its Python implementation \cite{abhisuri97}.
+
 
 ### Filtering
 
-The proposed method is very interesting and works very well in difficult condition, but it is also very computational intense. In real-time systems may not be feasible. So, we tried and implemented a simple but effective filtering approach that works very well and requires less effort. 
-Having the cropped eye, we apply a series of filtering and preprocessing aimed to make stand out the pupil, that it is always the darker and more circular object in eye.
-In particular, we increased the contrast of the image and we equalised it. Then we applied a soft gaussian blur to remove the noise and a erosion filter that removes the smaller parts like the eyelashes. We then use the OpenCv adaptive thresholding method to binarize the image and lastly we get the counters of all of the blob. 
+The proposed method is very interesting and works very well in difficult conditions, but it is also very computationally intense. In real-time systems may not be feasible. So, we tried and implemented a simple but effective filtering approach that works very well and requires less effort. 
+Having the cropped eye, we apply a series of filtering and preprocessing aimed to make stand out the pupil, that it is always the darker and more circular object in the eye.
+In particular, we increased the contrast of the image and we equalized it. Then we applied a soft Gaussian blur to remove the noise and an erosion filter that removes the smaller parts like the eyelashes. We then use the OpenCV adaptive thresholding method to binarize the image and lastly, we get the counters of all of the blob. 
 Looking for the largest one we find the pupil. See the figure for the application of the approach. 
 
 
@@ -140,9 +141,10 @@ Looking for the largest one we find the pupil. See the figure for the applicatio
 
 ### Testing
 
-To compare the two method we run both of them over a dataset containing around 1500 images of faces, all hand labeled with the exact position of the pupils.
-We measures the just found pupils positions with comparing them with the labels, computing the Hausdorff distance (described in [Huttenlocher et all]) that is the maximum all the distances between each point of a set and the closest point in the other set. For each image of the dataset we found the distances and then computed the mean.$$H(A, B) = \max(h(A,B), h(B,A))$$ $$h(A,B) = \max_{a\in A}\min_{b \in B} ||a-b||$$
-The results are down below. Please note that the mean and the standard deviation are done after removing outliers that where completely wrong (Z-score greater than 5). It is pretty straightforward to notice how the average time to compute the position is about 4 time longer with the means of gradient then with filtering, the means are quite the same and despite the fact that the first method is slightly more precise, it has also an higher deviation.
+To compare the two methods we run both of them over a dataset containing around 1500 images of faces, all hand labeled with the exact position of the pupils.
+We measure the just-found pupils' positions by comparing them with the labels, computing the Hausdorff distance (described in \cite{jesorsky2001hausdorff}) which is the maximum all the distances between each point of a set and the closest point in the other set. For each image of the dataset, we found the distances and then computed the mean.
+$$H(A, B) = \max(h(A,B), h(B,A))$$ $$h(A,B) = \max_{a\in A}\min_{b \in B} ||a-b||$$
+The results are down below. Please note that the mean and the standard deviation are done after removing outliers that were completely wrong (Z-score greater than 5). It is pretty straightforward to notice how the average time to compute the position is about 4 times longer with the means of gradients than with filtering, the means are quite the same and despite the fact that the first method is slightly more precise, it has also a higher deviation.
 
 
 | |Mean|Std. Dev.| Outliers | Avg. time |
@@ -151,7 +153,7 @@ The results are down below. Please note that the mean and the standard deviation
 | Filtering | 3.198|1.156| 3 | 0.028
 
 
-It has not been said that the first method is actually much more precise in low light environment, but for situation like ours real-time detection in normal environment, we have chose to use the filtering method. 
+It has not been said that the first method is actually much more precise in low-light environments, but for situations like ours real-time detection filtering method works fine and faster so we have chosen to use that for the next steps. 
 
 ## Camera tracking
 
