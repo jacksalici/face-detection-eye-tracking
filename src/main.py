@@ -13,6 +13,8 @@ FILTERING = "filtering"
 GRAD_MEANS = "grad_means"
 NO_PUPIL_DETECTION = "no_pupil"
 
+EYE_RATIO_MULTIPLIER = 100
+
 k = FaceLandmarkK()
 
 class GazeDetection():
@@ -127,13 +129,15 @@ class GazeDetection():
         """
 
         framebg = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = self.landmark_tracking.face_analysis(framebg)
+        
         
         biggest_face_index = 0
         biggest_face_area = 0
         
-        info = {}
+        saved_info = {}
 
+        # Compute detection for each face
+        faces = self.landmark_tracking.face_analysis(framebg)
         for face_index, face in enumerate (faces):
 
             image_points = np.array([
@@ -144,49 +148,50 @@ class GazeDetection():
                 face.get(k.MOUTH_SX),
                 face.get(k.MOUTH_DX),
             ], dtype="double")
-
+            
+            #pose n perspective solver
             nose_end_point2D, pitch, yaw, roll = self.pnp_solver.pose(
                 frame.shape, image_points)
 
-            info["pitch"] = pitch
-            info["yaw"] = yaw
-            info["roll"] = roll
+            saved_info["pitch"] = pitch
+            saved_info["yaw"] = yaw
+            saved_info["roll"] = roll
 
             face_facing = False
 
             if abs(pitch) < self.facing_sensibility and abs(yaw) < self.facing_sensibility:
                 face_facing = True
 
-            eye_frame_horizontal_padding = self.eye_frame_padding[0]
-            eye_frame_vertical_padding = self.eye_frame_padding[1]
             gaze_facing = face_facing
             
+            
+            #pupil detection
             if self.pupil_detection != None:
                 eyes = [framebg[
-                face.get(k.EYE_SX_TOP)[1] - eye_frame_vertical_padding:
-                    face.get(k.EYE_SX_BOTTOM)[1] + eye_frame_vertical_padding,
-                face.get(k.EYE_SX_IN)[0] - eye_frame_horizontal_padding:
-                    face.get(k.EYE_SX_OUT)[0] + eye_frame_horizontal_padding],
+                face.get(k.EYE_SX_TOP)[1] - self.eye_frame_padding[1]:
+                    face.get(k.EYE_SX_BOTTOM)[1] + self.eye_frame_padding[1],
+                face.get(k.EYE_SX_IN)[0] - self.eye_frame_padding[0]:
+                    face.get(k.EYE_SX_OUT)[0] + self.eye_frame_padding[0]],
                     framebg[
-                face.get(k.EYE_DX_TOP)[1]-eye_frame_vertical_padding:
-                    face.get(k.EYE_DX_BOTTOM)[1]+eye_frame_vertical_padding,
-                face.get(k.EYE_DX_OUT)[0]-eye_frame_horizontal_padding:
-                    face.get(k.EYE_DX_IN)[0]+eye_frame_horizontal_padding]
+                face.get(k.EYE_DX_TOP)[1]-self.eye_frame_padding[1]:
+                    face.get(k.EYE_DX_BOTTOM)[1]+self.eye_frame_padding[1],
+                face.get(k.EYE_DX_OUT)[0]-self.eye_frame_padding[0]:
+                    face.get(k.EYE_DX_IN)[0]+self.eye_frame_padding[0]]
                     ]
 
                 pupil_sx_x, pupil_sx_y = self.pupil_detection.detect_pupil(eyes[0])
                 pupil_dx_x, pupil_dx_y = self.pupil_detection.detect_pupil(eyes[1])
                 
                 
-
+                #relative localization
                 pupil_sx_y, pupil_sx_x = face.get(k.EYE_SX_TOP)[
-                    1] - eye_frame_vertical_padding + pupil_sx_y, face.get(k.EYE_SX_IN)[0] - eye_frame_horizontal_padding + pupil_sx_x
+                    1] - self.eye_frame_padding[1] + pupil_sx_y, face.get(k.EYE_SX_IN)[0] - self.eye_frame_padding[0] + pupil_sx_x
                 pupil_dx_y, pupil_dx_x = face.get(k.EYE_DX_TOP)[
-                    1] - eye_frame_vertical_padding + pupil_dx_y, face.get(k.EYE_DX_OUT)[0] - eye_frame_horizontal_padding + pupil_dx_x
+                    1] - self.eye_frame_padding[1] + pupil_dx_y, face.get(k.EYE_DX_OUT)[0] - self.eye_frame_padding[0] + pupil_dx_x
 
 
-                info["sx_eye"] = [pupil_sx_x, pupil_sx_y]
-                info["dx_eye"] = [pupil_dx_x, pupil_dx_y]
+                saved_info["sx_eye"] = [pupil_sx_x, pupil_sx_y]
+                saved_info["dx_eye"] = [pupil_dx_x, pupil_dx_y]
                 # horizontal ratio that expresses how centered the pupil is within the eyes, from -0.5 to 0.5, 0 is center.
                 pupil_sx_center_h_ratio = round((pupil_sx_x - face.get(k.EYE_SX_IN)[0]) / (
                     face.get(k.EYE_SX_OUT)[0] - face.get(k.EYE_SX_IN)[0]) - 0.5, 2)
@@ -206,15 +211,15 @@ class GazeDetection():
                     cv2.rectangle(frame, (face.get(k.BOX)[0], face.get(k.BOX)[1]), (face.get(k.BOX)[
                         0]+face.get(k.BOX)[2], face.get(k.BOX)[1]+face.get(k.BOX)[3]), (255, 0, 255), 2)
 
-                    cv2.rectangle(frame, (face.get(k.EYE_SX_IN)[0]-eye_frame_horizontal_padding,
-                                        face.get(k.EYE_SX_TOP)[1]-eye_frame_vertical_padding),
-                                (face.get(k.EYE_SX_OUT)[0]+eye_frame_horizontal_padding,
-                                face.get(k.EYE_SX_BOTTOM)[1]+eye_frame_vertical_padding),
+                    cv2.rectangle(frame, (face.get(k.EYE_SX_IN)[0]-self.eye_frame_padding[0],
+                                        face.get(k.EYE_SX_TOP)[1]-self.eye_frame_padding[1]),
+                                (face.get(k.EYE_SX_OUT)[0]+self.eye_frame_padding[0],
+                                face.get(k.EYE_SX_BOTTOM)[1]+self.eye_frame_padding[1]),
                                 (255, 0, 255), 2)
-                    cv2.rectangle(frame, (face.get(k.EYE_DX_OUT)[0]-eye_frame_horizontal_padding,
-                                        face.get(k.EYE_DX_TOP)[1]-eye_frame_vertical_padding),
-                                (face.get(k.EYE_DX_IN)[0]+eye_frame_horizontal_padding,
-                                face.get(k.EYE_DX_BOTTOM)[1]+eye_frame_vertical_padding),
+                    cv2.rectangle(frame, (face.get(k.EYE_DX_OUT)[0]-self.eye_frame_padding[0],
+                                        face.get(k.EYE_DX_TOP)[1]-self.eye_frame_padding[1]),
+                                (face.get(k.EYE_DX_IN)[0]+self.eye_frame_padding[0],
+                                face.get(k.EYE_DX_BOTTOM)[1]+self.eye_frame_padding[1]),
                                 (255, 0, 255), 2)
                     
                     for p in list(face.values())[1:]:
@@ -300,5 +305,5 @@ class GazeDetection():
         if return_info == False:
             return frame, gaze_facing
         else:
-            return frame, gaze_facing, info
+            return frame, gaze_facing, saved_info
 
