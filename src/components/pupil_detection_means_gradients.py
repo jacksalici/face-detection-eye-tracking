@@ -18,16 +18,16 @@ class PupilDetection():
         rows, cols = out.shape
         for row in range(rows):
             for col in range(cols):
-                dx, dy = x-col, y-row
+                r, dy = x-col, y-row
 
-                if dx == 0 and dy == 0:
+                if r == 0 and dy == 0:
                     continue
 
-                magnitude = sqrt((dx*dx)+(dy*dy))
-                dx = dx/magnitude
+                magnitude = sqrt((r*r)+(dy*dy))
+                r = r/magnitude
                 dy = dy/magnitude
 
-                dot_product = max(0.0, dx * gx + dy * gy)
+                dot_product = max(0.0, r * gx + dy * gy)
 
                 out[row][col] += dot_product * dot_product * weight[row][col]
 

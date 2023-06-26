@@ -46,8 +46,8 @@ for index in range(0, N_IMAGES):
 
         arr = np.array([
             [[gt_values[0], gt_values[1]], [gt_values[2], gt_values[3]]],
-            [returned_info_means["sx_eye"], returned_info_means["dx_eye"]],
-            [returned_info_filtering["sx_eye"], returned_info_filtering["dx_eye"]],
+            [returned_info_means["l_eye"], returned_info_means["r_eye"]],
+            [returned_info_filtering["l_eye"], returned_info_filtering["r_eye"]],
         ])
         
 

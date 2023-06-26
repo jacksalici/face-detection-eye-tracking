@@ -146,10 +146,10 @@ class GazeDetection():
             image_points = np.array([
                 face.get(k.NOSE),
                 face.get(k.CHIN),
-                face.get(k.EYE_SX_OUT),
-                face.get(k.EYE_DX_OUT),
-                face.get(k.MOUTH_SX),
-                face.get(k.MOUTH_DX),
+                face.get(k.EYE_L_OUT),
+                face.get(k.EYE_R_OUT),
+                face.get(k.MOUTH_L),
+                face.get(k.MOUTH_R),
             ], dtype="double")
             
             #pose n perspective solver
@@ -171,45 +171,45 @@ class GazeDetection():
             #pupil detection
             if self.pupil_detection != None:
                 eyes = [framebg[
-                face.get(k.EYE_SX_TOP)[1] - self.eye_frame_padding[1]:
-                    face.get(k.EYE_SX_BOTTOM)[1] + self.eye_frame_padding[1],
-                face.get(k.EYE_SX_IN)[0] - self.eye_frame_padding[0]:
-                    face.get(k.EYE_SX_OUT)[0] + self.eye_frame_padding[0]],
+                face.get(k.EYE_L_TOP)[1] - self.eye_frame_padding[1]:
+                    face.get(k.EYE_L_BOTTOM)[1] + self.eye_frame_padding[1],
+                face.get(k.EYE_L_IN)[0] - self.eye_frame_padding[0]:
+                    face.get(k.EYE_L_OUT)[0] + self.eye_frame_padding[0]],
                     framebg[
-                face.get(k.EYE_DX_TOP)[1]-self.eye_frame_padding[1]:
-                    face.get(k.EYE_DX_BOTTOM)[1]+self.eye_frame_padding[1],
-                face.get(k.EYE_DX_OUT)[0]-self.eye_frame_padding[0]:
-                    face.get(k.EYE_DX_IN)[0]+self.eye_frame_padding[0]]
+                face.get(k.EYE_R_TOP)[1]-self.eye_frame_padding[1]:
+                    face.get(k.EYE_R_BOTTOM)[1]+self.eye_frame_padding[1],
+                face.get(k.EYE_R_OUT)[0]-self.eye_frame_padding[0]:
+                    face.get(k.EYE_R_IN)[0]+self.eye_frame_padding[0]]
                     ]
 
-                pupil_sx_x, pupil_sx_y = self.pupil_detection.detect_pupil(eyes[0])
-                pupil_dx_x, pupil_dx_y = self.pupil_detection.detect_pupil(eyes[1])
+                pupil_l_x, pupil_l_y = self.pupil_detection.detect_pupil(eyes[0])
+                pupil_r_x, pupil_r_y = self.pupil_detection.detect_pupil(eyes[1])
                 
                 
                 #relative localization
-                pupil_sx_y, pupil_sx_x = face.get(k.EYE_SX_TOP)[
-                    1] - self.eye_frame_padding[1] + pupil_sx_y, face.get(k.EYE_SX_IN)[0] - self.eye_frame_padding[0] + pupil_sx_x
-                pupil_dx_y, pupil_dx_x = face.get(k.EYE_DX_TOP)[
-                    1] - self.eye_frame_padding[1] + pupil_dx_y, face.get(k.EYE_DX_OUT)[0] - self.eye_frame_padding[0] + pupil_dx_x
+                pupil_l_y, pupil_l_x = face.get(k.EYE_L_TOP)[
+                    1] - self.eye_frame_padding[1] + pupil_l_y, face.get(k.EYE_L_IN)[0] - self.eye_frame_padding[0] + pupil_l_x
+                pupil_r_y, pupil_r_x = face.get(k.EYE_R_TOP)[
+                    1] - self.eye_frame_padding[1] + pupil_r_y, face.get(k.EYE_R_OUT)[0] - self.eye_frame_padding[0] + pupil_r_x
 
 
-                saved_info["sx_eye"] = [pupil_sx_x, pupil_sx_y]
-                saved_info["dx_eye"] = [pupil_dx_x, pupil_dx_y]
+                saved_info["l_eye"] = [pupil_l_x, pupil_l_y]
+                saved_info["r_eye"] = [pupil_r_x, pupil_r_y]
                 # horizontal ratio that expresses how centered the pupil is within the eyes, from -0.5 to 0.5, 0 is center.
-                pupil_sx_center_h_ratio = round((pupil_sx_x - face.get(k.EYE_SX_IN)[0]) / (
-                    face.get(k.EYE_SX_OUT)[0] - face.get(k.EYE_SX_IN)[0]) - 0.5, 2)
-                pupil_dx_center_h_ratio = round((pupil_dx_x - face.get(k.EYE_DX_OUT)[0]) / (
-                    face.get(k.EYE_DX_IN)[0] - face.get(k.EYE_DX_OUT)[0]) - 0.5, 2)
+                pupil_l_center_h_ratio = round((pupil_l_x - face.get(k.EYE_L_IN)[0]) / (
+                    face.get(k.EYE_L_OUT)[0] - face.get(k.EYE_L_IN)[0]) - 0.5, 2)
+                pupil_r_center_h_ratio = round((pupil_r_x - face.get(k.EYE_R_OUT)[0]) / (
+                    face.get(k.EYE_R_IN)[0] - face.get(k.EYE_R_OUT)[0]) - 0.5, 2)
             
                 #facing computation
                 if face_facing:
-                    if max(abs(pupil_sx_center_h_ratio), abs(pupil_dx_center_h_ratio))<(self.face_facing_sensibility/EYE_RATIO_MULTIPLIER):
+                    if max(abs(pupil_l_center_h_ratio), abs(pupil_r_center_h_ratio))<(self.face_facing_sensibility/EYE_RATIO_MULTIPLIER):
                         gaze_facing = True
                     else:
                         gaze_facing = False
-                elif yaw < 0 and abs(2*abs(pupil_sx_center_h_ratio) * EYE_RATIO_MULTIPLIER - abs(yaw)) < GAZE_FACING_SENSIBILITY:
+                elif yaw < 0 and abs(2*abs(pupil_l_center_h_ratio) * EYE_RATIO_MULTIPLIER - abs(yaw)) < GAZE_FACING_SENSIBILITY:
                     gaze_facing = True
-                elif yaw > 0 and abs(2*abs(pupil_dx_center_h_ratio) * EYE_RATIO_MULTIPLIER - abs(yaw)) < GAZE_FACING_SENSIBILITY:
+                elif yaw > 0 and abs(2*abs(pupil_r_center_h_ratio) * EYE_RATIO_MULTIPLIER - abs(yaw)) < GAZE_FACING_SENSIBILITY:
                     gaze_facing = True
 
             #check the area of each face and find the max one
@@ -225,15 +225,15 @@ class GazeDetection():
                     cv2.rectangle(frame, (face.get(k.BOX)[0], face.get(k.BOX)[1]), (face.get(k.BOX)[
                         0]+face.get(k.BOX)[2], face.get(k.BOX)[1]+face.get(k.BOX)[3]), (255, 0, 255), 2)
 
-                    cv2.rectangle(frame, (face.get(k.EYE_SX_IN)[0]-self.eye_frame_padding[0],
-                                        face.get(k.EYE_SX_TOP)[1]-self.eye_frame_padding[1]),
-                                (face.get(k.EYE_SX_OUT)[0]+self.eye_frame_padding[0],
-                                face.get(k.EYE_SX_BOTTOM)[1]+self.eye_frame_padding[1]),
+                    cv2.rectangle(frame, (face.get(k.EYE_L_IN)[0]-self.eye_frame_padding[0],
+                                        face.get(k.EYE_L_TOP)[1]-self.eye_frame_padding[1]),
+                                (face.get(k.EYE_L_OUT)[0]+self.eye_frame_padding[0],
+                                face.get(k.EYE_L_BOTTOM)[1]+self.eye_frame_padding[1]),
                                 (255, 0, 255), 2)
-                    cv2.rectangle(frame, (face.get(k.EYE_DX_OUT)[0]-self.eye_frame_padding[0],
-                                        face.get(k.EYE_DX_TOP)[1]-self.eye_frame_padding[1]),
-                                (face.get(k.EYE_DX_IN)[0]+self.eye_frame_padding[0],
-                                face.get(k.EYE_DX_BOTTOM)[1]+self.eye_frame_padding[1]),
+                    cv2.rectangle(frame, (face.get(k.EYE_R_OUT)[0]-self.eye_frame_padding[0],
+                                        face.get(k.EYE_R_TOP)[1]-self.eye_frame_padding[1]),
+                                (face.get(k.EYE_R_IN)[0]+self.eye_frame_padding[0],
+                                face.get(k.EYE_R_BOTTOM)[1]+self.eye_frame_padding[1]),
                                 (255, 0, 255), 2)
                     
                     for p in list(face.values())[1:]:
@@ -244,13 +244,13 @@ class GazeDetection():
 
                 if (self.pupil_detection != None):
                     try:
-                        cv2.circle(frame, (pupil_sx_x, pupil_sx_y),
+                        cv2.circle(frame, (pupil_l_x, pupil_l_y),
                                 10, (0, 255, 255), 2)
 
-                        cv2.circle(frame, (pupil_dx_x, pupil_dx_y),
+                        cv2.circle(frame, (pupil_r_x, pupil_r_y),
                                 10, (0, 255, 255), 2)
 
-                        cv2.putText(frame, f"Pupil horizzontal ratios: {pupil_dx_center_h_ratio}, {pupil_sx_center_h_ratio}", (face.get(k.EYE_DX_OUT)[0], 160),
+                        cv2.putText(frame, f"Pupil horizzontal ratios: {pupil_r_center_h_ratio}, {pupil_l_center_h_ratio}", (face.get(k.EYE_R_OUT)[0], 160),
                                     1, 1, (255, 255, 255), 1, cv2.LINE_AA)
                     except:
                         print("WARNING: Error during info display")
@@ -264,24 +264,24 @@ class GazeDetection():
                         nose_end_point2D[2].ravel().astype(int)), (0, 0, 255), 2)
 
                     if roll and pitch and yaw:
-                        cv2.putText(frame, "Roll: " + str(round(roll)), (face.get(k.EYE_DX_OUT)[0], 100),
+                        cv2.putText(frame, "Roll: " + str(round(roll)), (face.get(k.EYE_R_OUT)[0], 100),
                                     1, 1, (255, 255, 255), 1, cv2.LINE_AA)
-                        cv2.putText(frame, "Pitch: " + str(round(pitch)), (face.get(k.EYE_DX_OUT)[0], 120),
+                        cv2.putText(frame, "Pitch: " + str(round(pitch)), (face.get(k.EYE_R_OUT)[0], 120),
                                     1, 1, (255, 255, 255), 1, cv2.LINE_AA)
-                        cv2.putText(frame, "Yaw: " + str(round(yaw)), (face.get(k.EYE_DX_OUT)[0], 140),
+                        cv2.putText(frame, "Yaw: " + str(round(yaw)), (face.get(k.EYE_R_OUT)[0], 140),
                                     1, 1, (255, 255, 255), 1, cv2.LINE_AA)
 
                 except:
                     print("WARNING: Error during info display")
 
                 try:
-                    cv2.putText(frame, "Gaze facing camera: " + str(int(gaze_facing)), (face.get(k.EYE_DX_OUT)[0], 200),
+                    cv2.putText(frame, "Gaze facing camera: " + str(int(gaze_facing)), (face.get(k.EYE_R_OUT)[0], 200),
                                 1, 1, (255, 255, 255), 1, cv2.LINE_AA)
                 except:
                     print("WARNING: Error during info display")
                 
                 try:
-                    cv2.putText(frame, "Face facing camera: " + str(int(face_facing)), (face.get(k.EYE_DX_OUT)[0], 180),
+                    cv2.putText(frame, "Face facing camera: " + str(int(face_facing)), (face.get(k.EYE_R_OUT)[0], 180),
                                 1, 1, (255, 255, 255), 1, cv2.LINE_AA)
                 except:
                     print("WARNING: Error during info display")
