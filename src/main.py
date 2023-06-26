@@ -198,14 +198,25 @@ class GazeDetection():
                 pupil_dx_center_h_ratio = round((pupil_dx_x - face.get(k.EYE_DX_OUT)[0]) / (
                     face.get(k.EYE_DX_IN)[0] - face.get(k.EYE_DX_OUT)[0]) - 0.5, 2)
             
+                #facing computation
                 if face_facing:
-                    gaze_facing = True
+                    if max(abs(pupil_sx_center_h_ratio), abs(pupil_dx_center_h_ratio))<(self.facing_sensibility/EYE_RATIO_MULTIPLIER):
+                        gaze_facing = True
+                    else:
+                        gaze_facing = False
                 elif yaw < 0 and abs(pupil_sx_center_h_ratio * 100 - yaw) < self.facing_sensibility:
                     gaze_facing = True
                 elif yaw > 0 and abs(pupil_dx_center_h_ratio * 100 - yaw) < self.facing_sensibility:
                     gaze_facing = True
 
-            
+            #check the area of each face and find the max one
+            current_face_area = face.get(k.BOX)[2]*face.get(k.BOX)[3]
+            if current_face_area > biggest_face_area:
+                biggest_face_area = current_face_area
+                biggest_face_index = face_index
+                
+                
+            #printing stuffs
             if self.annotate_image:
                 try:
                     cv2.rectangle(frame, (face.get(k.BOX)[0], face.get(k.BOX)[1]), (face.get(k.BOX)[
@@ -272,12 +283,6 @@ class GazeDetection():
                 except:
                     print("WARNING: Error during info display")
 
-            
-            #check the area of each face and find the max one
-            current_face_area = face.get(k.BOX)[2]*face.get(k.BOX)[3]
-            if current_face_area > biggest_face_area:
-                biggest_face_area = current_face_area
-                biggest_face_index = face_index
                 
         if len(faces)>0:
             
