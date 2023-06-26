@@ -15,6 +15,9 @@ NO_PUPIL_DETECTION = "no_pupil"
 
 EYE_RATIO_MULTIPLIER = 100
 
+FACE_FACING_SENSIBILITY = 20
+GAZE_FACING_SENSIBILITY = 5
+
 k = FaceLandmarkK()
 
 class GazeDetection():
@@ -30,7 +33,7 @@ class GazeDetection():
                  annotate_image: bool = False,
                  crop_frame: bool = True,
                  crop_frame_paddings: tuple = (0.5,0,0.15,0), #top, right, bottom, left / [0:1]
-                 facing_sensibility: int = 20,
+                 face_facing_sensibility: int = FACE_FACING_SENSIBILITY,
                  eye_frame_padding: tuple = (0, 2), #horizontal, vertical
                  ) -> None:
         """Detects gaze and/or pose estimation using various methods.
@@ -48,7 +51,7 @@ class GazeDetection():
             annotate_image (bool, optional): If true, angles and landmark will be added to the image. Defaults to False.
             crop_frame (bool, optional): If true, the return frame will be cropped on the biggest face. Defaults to True.
             crop_frame_paddings (tuple, optional): Padding of the face cropped frame. The tuple has the format (top, right, bottom, left), values of 0 mean no padding, values of 1 mean a padding on that edge equal to the size of the frame in the perpendicular dimension. Defaults to (0.5,0,0.15,0).
-            facing_sensibility (int, oprional): angle sensibility for which the face will be considered facing. Defaults to 20. 
+            face_facing_sensibility (int, oprional): angle sensibility for which the face will be considered facing. Defaults to 20. 
             eye_frame_padding (tuple, optional): (horizontal, vertical) padding, in pixel of the eye applied before the pupil detection. Defaults to (0, 2).
         """
     
@@ -81,7 +84,7 @@ class GazeDetection():
         self.eye_frame_padding = eye_frame_padding
         self.crop_frame = crop_frame
         self.crop_frame_paddings = crop_frame_paddings
-        self.facing_sensibility = facing_sensibility
+        self.face_facing_sensibility = face_facing_sensibility
         
         try:
             if print_on_serial:
@@ -159,7 +162,7 @@ class GazeDetection():
 
             face_facing = False
 
-            if abs(pitch) < self.facing_sensibility and abs(yaw) < self.facing_sensibility:
+            if abs(pitch) < self.face_facing_sensibility and abs(yaw) < self.face_facing_sensibility:
                 face_facing = True
 
             gaze_facing = face_facing
@@ -200,13 +203,13 @@ class GazeDetection():
             
                 #facing computation
                 if face_facing:
-                    if max(abs(pupil_sx_center_h_ratio), abs(pupil_dx_center_h_ratio))<(self.facing_sensibility/EYE_RATIO_MULTIPLIER):
+                    if max(abs(pupil_sx_center_h_ratio), abs(pupil_dx_center_h_ratio))<(self.face_facing_sensibility/EYE_RATIO_MULTIPLIER):
                         gaze_facing = True
                     else:
                         gaze_facing = False
-                elif yaw < 0 and abs(pupil_sx_center_h_ratio * 100 - yaw) < self.facing_sensibility:
+                elif yaw < 0 and abs(2*abs(pupil_sx_center_h_ratio) * EYE_RATIO_MULTIPLIER - abs(yaw)) < GAZE_FACING_SENSIBILITY:
                     gaze_facing = True
-                elif yaw > 0 and abs(pupil_dx_center_h_ratio * 100 - yaw) < self.facing_sensibility:
+                elif yaw > 0 and abs(2*abs(pupil_dx_center_h_ratio) * EYE_RATIO_MULTIPLIER - abs(yaw)) < GAZE_FACING_SENSIBILITY:
                     gaze_facing = True
 
             #check the area of each face and find the max one
